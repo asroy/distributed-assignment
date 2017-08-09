@@ -8,32 +8,32 @@ class DistributedAssignmentDataCommunicator
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType> >
-    void SendAssignorDataToAssigneeData( TDataContainerType &, TDataContainerType & );
+    void PutAssignorDataToAssigneeData( TDataContainerType &, TDataContainerType & );
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType> >
-    void SendAssigneeDataToAssingorData( TDataContainerType &, TDataContainerType & );
+    void PutAssigneeDataToAssingorData( TDataContainerType &, TDataContainerType & );
 
   private:
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType>,
                typename TBufferType = std::map < TContractorResidencyType, std::vector<TDataType> > >
-    void SetAssignorBufferFromData( TBufferType &, TDataContainerType & );
+    void LoadAssignorBufferFromData( TBufferType &, TDataContainerType & );
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType>,
                typename TBufferType = std::map < TContractorResidencyType, std::vector<TDataType> > >
-    void PutAssignorBufferToData( TBufferType &, TDataContainerType & );
+    void LoadAssignorBufferToData( TBufferType &, TDataContainerType & );
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType>,
                typename TBufferType = std::map < TContractorResidencyType, std::vector<TDataType> > >
-    void SetAssigneeBufferFromData( TBufferType &, TDataContainerType & );
+    void LoadAssigneeBufferFromData( TBufferType &, TDataContainerType & );
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType>,
                typename TBufferType = std::map < TContractorResidencyType, std::vector<TDataType> > >
-    void PutAssigneeBufferToData( TBufferType &, TDataContainerType & );
+    void LoadAssigneeBufferToData( TBufferType &, TDataContainerType & );
 
     typedef std::map < TContractorResidencyType, std::vector <int> > BufferToDataMapType;
 

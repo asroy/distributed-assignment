@@ -5,17 +5,40 @@ class DistributedContractorContainer
 {
   public:
     typedef TContractorType* ContractorPointerType;
+    typedef std::map<TContractorKeyType,ContractorPointerType> ContractorPointerContainerType;
     typedef std::map<TContractorKeyType, TContractorResidencyType> ContractorResidencyContainerType;
 
-    void AddLocalContractor( TContractorType &);
+    void AddLocalContractor( const TContractorType & contractor )
+    { mLocalContractors[contractor.Key()] = & contractor; }
 
-    void GenerateGlobalContractorsResidency();
+    void GenerateGlobalContractorsResidency()
+    {
 
-    TContractorResidencyContainerType & GlobalContractorsResidency() { return mGlobalContractorsResidency; }
+    }
 
-    TContractorResidencyType & ContractorResidency( TContractorKeyType & );
+    TContractorResidencyContainerType & GlobalContractorsResidency()
+    { return mGlobalContractorsResidency; }
 
-    TContractorType & LocalContractor( TContractorKeyType &);
+    ContractorPointerType LocalContractor( TContractorKeyType & key )
+    { 
+      ContractorPointerContainerType::iterator it = mLocalContractor.find(key);
+      if( it == mLocalContractor.end() )
+        return nullptr;
+      else
+        return it->second;
+    }
+
+    TContractorResidencyType & ContractorResidency( TContractorKeyType & )
+    {
+      ContractorResidencyContainerType::iterator it = mGlobalContractorsResidency.find(key);
+      if( it == mGlobalContractorsResidency.end() )
+      {
+        std::cout << __func__ << std::endl;
+        exit();
+      }
+      else
+        return it->second;
+    }
 
     template< typename TInputDataType,
               typename TOutputDataType >
@@ -48,7 +71,6 @@ class DistributedContractorContainer
     }
 
   private:
+    ContractorPointerContainerType mLocalContractors;
     ContractorResidencyContainerType mGlobalContractorsResidency;
-
-    std::map<TContractorKeyType,ContractorPointerType> mLocalContractors;
 }

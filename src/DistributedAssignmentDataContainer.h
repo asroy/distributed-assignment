@@ -9,15 +9,18 @@ class DistributedAssignmentDataContainer
 
     BuildCommunication( DistributedAssignmentDataCommunicatorType & );
 
-    DataContainerType & AssignorData() { return mAssignorDatas; };
-    DataContainerType & AssigneeData() { return mAssingeeDatas; };
+    DataContainerType & AssignorData()
+    { return mAssignorData; }
+
+    DataContainerType & AssigneeData()
+    { return mAssingeeData; }
 
     void SendAssignorDataToAssigneeData();
     void SendAssigneeDataToAssignorData();
 
   private:
-    TDataContainerType mAssignorDatas;
-    TDataContainerType mAssigneeDatas;
+    TDataContainerType mAssignorData;
+    TDataContainerType mAssigneeData;
 
     TBufferType mAssignorBuffer;
     TBufferType mAssigneeBuffer;
