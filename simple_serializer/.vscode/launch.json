@@ -1,0 +1,57 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python launch",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": true,
+            "pythonPath": "/usr/bin/python3",
+            "program": "${workspaceRoot}/2_triangle-omp.py",
+            "cwd": "",
+            "console": "externalTerminal",
+            "env": {},
+            "envFile": "${workspaceRoot}/.env",
+            "debugOptions": [
+                "WaitOnAbnormalExit",
+                "WaitOnNormalExit"
+            ]
+        },
+        {
+            "name": "Python Attach (local) proc 0",
+            "type": "python",
+            "request": "attach",
+            "localRoot": "${workspaceRoot}",
+            "remoteRoot": "${workspaceRoot}",
+            "port": 3000,
+            "secret": "my_secret",
+            "host": "localhost"
+        },
+        {
+            "name": "Python Attach (local) proc 1",
+            "type": "python",
+            "request": "attach",
+            "localRoot": "${workspaceRoot}",
+            "remoteRoot": "${workspaceRoot}",
+            "port": 3001,
+            "secret": "my_secret",
+            "host": "localhost"
+        },
+        { 
+            "name": "LLDB Attach proc 0",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceRoot}/a.out",
+            "processId": "${command:pickProcess}",
+            "MIMode": "lldb"
+        },
+        { 
+            "name": "LLDB Attach proc 1",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceRoot}/a.out",
+            "processId": "${command:pickProcess}",
+            "MIMode": "lldb"
+        }
+    ]
+}

@@ -13,9 +13,7 @@ class ContractorMpiResidency
     struct LessThan
     {
       bool operator() ( const ContractorMpiResidency & a, const ContractorMpiResidency & b ) const
-      {
-        return ( a.mRank < b.mRank );
-      }
+      { return ( a.mRank < b.mRank ); }
     }
 
   private:
