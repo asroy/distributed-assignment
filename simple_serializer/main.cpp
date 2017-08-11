@@ -48,8 +48,8 @@ int main( int argc, char** argv )
 
   std::cout << "rank " << rank << " getPID "<< ::getpid() << std::endl;
 
-  int dump;
-  std::cin >> dump;
+  // int dump;
+  // std::cin >> dump;
 
   if( rank == 0 )
   {
@@ -81,7 +81,10 @@ int main( int argc, char** argv )
     send.write( (char*)(&a0), sizeof(a0) );
     send.write( (char*)(&a1), sizeof(a1) );
 
-    std::cout <<"rank" << rank << send.str() << std::endl;
+    // std::string str ("Please split this sentence into tokens");
+    // std::stringstream send(str);
+
+    // std::cout <<"rank" << rank << send.str() << std::endl;
 
     int send_size;
 
@@ -90,17 +93,10 @@ int main( int argc, char** argv )
     MPI_Send( &send_size, 1, MPI_INT, 1, 0, MPI_COMM_WORLD );
 
     char* send_c_str = new char[send.str().size()+1];
-    char* p = std::strcpy(send_c_str, send.str().c_str());
-    std::string send_str;
+    std::memcpy(send_c_str, send.str().c_str(), send_size);
 
     std::cout << "type!!!" << typeid(send.str().c_str()).name() << std::endl;
-    std::cout << "type!!!" << typeid(send_str).name() << std::endl;
     type_name(send.str().c_str());
-
-    if( p == NULL )
-    {
-      printf("wrongxxxxxxxxxxxxxxxxxxxxxxxxx");
-    }
 
     printf("send.str().c_str():");
     for(size_t i = 0; i < send.str().size()+1; i++)
