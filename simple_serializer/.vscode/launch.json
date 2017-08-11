@@ -38,20 +38,20 @@
             "host": "localhost"
         },
         { 
-            "name": "LLDB Attach proc 0",
+            "name": "GDB Attach proc 0",
             "type": "cppdbg",
             "request": "attach",
             "program": "${workspaceRoot}/a.out",
             "processId": "${command:pickProcess}",
-            "MIMode": "lldb"
+            "MIMode": "gdb"
         },
         { 
-            "name": "LLDB Attach proc 1",
+            "name": "GDB Attach proc 1",
             "type": "cppdbg",
             "request": "attach",
             "program": "${workspaceRoot}/a.out",
             "processId": "${command:pickProcess}",
-            "MIMode": "lldb"
+            "MIMode": "gdb"
         }
     ]
 }
