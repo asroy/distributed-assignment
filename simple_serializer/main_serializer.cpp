@@ -1,29 +1,11 @@
 #include<mpi.h>
 #include<iostream>
-#include<sstream>
 #include<sys/types.h>
 #include<unistd.h>
-#include<cstring>
-#include<cstdio>
 #include<typeinfo>
 #include<cxxabi.h>
-
-struct B
-{
-  int i;
-  double z;
-  char c;
-};
-
-
-struct A
-{
-  int i;
-  double x;
-  double y[2];
-
-  B b;
-};
+#include<vector>
+#include "serializer.h"
 
 template<typename T>
 void type_name(T u)
@@ -37,6 +19,8 @@ void type_name(T u)
   std::cout << ti.name() << "\t=> " << realname << "\t: " << status << '\n';
   free(realname);
 }
+
+template void Serializer::Save<A>( const std::vector<A> & );
 
 int main( int argc, char** argv )
 {
@@ -76,20 +60,26 @@ int main( int argc, char** argv )
     std::cout << "rank" << rank << a0.i << a0.x << a0.y[0] << a0.y[1] << a0.b.i << a0.b.z << a0.b.c << std::endl;
     std::cout << "rank" << rank << a1.i << a1.x << a0.y[0] << a1.y[1] << a1.b.i << a1.b.z << a1.b.c << std::endl;
 
-    int send_size = 2*(int)sizeof(a0);
+    std::vector<A> send_vector;
+    
+    send_vector.push_back(a0);
+    send_vector.push_back(a1);
 
-    char* send_c_ptr = new char[send_size];
+    Serializer send_serial;
 
-    A* send_ptr = (A*) send_c_ptr;
+    send_serial.ReallocateBuffer(200);
 
-    send_ptr[0] = a0;
-    send_ptr[1] = a1;
+
+    const std::vector<A> & r_send_vector = send_vector;
+    send_serial.Save(r_send_vector);
+
+    int send_size = (int) send_serial.BufferSaveSize();
+
+    std::cout << rank << ": send_size " << send_size << std::endl;
 
     MPI_Send( &send_size, 1, MPI_INT, 1, 0, MPI_COMM_WORLD );
 
-    MPI_Send( send_c_ptr, send_size, MPI_CHAR, 1, 1, MPI_COMM_WORLD );
-
-    delete[] send_c_ptr;
+    MPI_Send( send_serial.BufferPointer(), send_size, MPI_CHAR, 1, 1, MPI_COMM_WORLD );
   }
 
 
@@ -101,24 +91,26 @@ int main( int argc, char** argv )
 
     MPI_Recv( &recv_size, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &status );
 
-    char* recv_c_ptr = new char[recv_size];
+    std::cout << rank << ": recv_size " << recv_size << std::endl;
 
-    MPI_Recv( recv_c_ptr, recv_size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status );
+    Serializer recv_serial;
 
-    A* recv_ptr = (A*)recv_c_ptr;
+    recv_serial.ReallocateBuffer(recv_size);
+
+    std::vector<A> recv_vector;
+
+    recv_serial.Load(recv_vector);
+
+    MPI_Recv( recv_serial.BufferPointer(), recv_size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status );
 
     A a2, a3;
 
-    a2 = recv_ptr[0];
-    a3 = recv_ptr[1];
+    a2 = recv_vector[0];
+    a3 = recv_vector[1];
 
     std::cout << "rank" << rank << a2.i << a2.x << a2.y[0] << a2.y[1] << a2.b.i << a2.b.z << a2.b.c << std::endl;
     std::cout << "rank" << rank << a3.i << a3.x << a3.y[0] << a3.y[1] << a3.b.i << a3.b.z << a3.b.c << std::endl;
-
-    delete[] recv_c_ptr;
   }
 
   MPI_Finalize();
-
-
 }
