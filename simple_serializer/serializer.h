@@ -1,5 +1,3 @@
-#include"my_data.h"
-
 #define SERIALIZER_DIRECT_SAVE(TDataType)                         \
     void Save( const TDataType & r_data )                         \
     {                                                             \
@@ -90,7 +88,6 @@ class Serializer
     SERIALIZER_DIRECT_SAVE(unsigned int)
     SERIALIZER_DIRECT_SAVE(unsigned long)
     SERIALIZER_DIRECT_SAVE(double)
-    SERIALIZER_DIRECT_SAVE(A)
 
     //load basic type
     SERIALIZER_DIRECT_LOAD(bool)
@@ -100,7 +97,6 @@ class Serializer
     SERIALIZER_DIRECT_LOAD(unsigned int)
     SERIALIZER_DIRECT_LOAD(unsigned long)
     SERIALIZER_DIRECT_LOAD(double)
-    SERIALIZER_DIRECT_LOAD(A)
 
     //save std::vector
     template<typename TDataType>

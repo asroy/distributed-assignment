@@ -43,7 +43,8 @@
             "request": "attach",
             "program": "${workspaceRoot}/a.out",
             "processId": "${command:pickProcess}",
-            "MIMode": "gdb"
+            "MIMode": "gdb",
+            "externalConsole": false,
         },
         { 
             "name": "GDB Attach proc 1",
@@ -51,7 +52,8 @@
             "request": "attach",
             "program": "${workspaceRoot}/a.out",
             "processId": "${command:pickProcess}",
-            "MIMode": "gdb"
+            "MIMode": "gdb",
+            "externalConsole": false,
         }
     ]
 }

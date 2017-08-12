@@ -6,6 +6,7 @@
 #include<cxxabi.h>
 #include<vector>
 #include "serializer.h"
+#include "my_data.h"
 
 template<typename T>
 void type_name(T u)
@@ -34,6 +35,7 @@ int main( int argc, char** argv )
 
   // int dump;
   // std::cin >> dump;
+
 
   if( rank == 0 )
   {
@@ -97,11 +99,11 @@ int main( int argc, char** argv )
 
     recv_serial.ReallocateBuffer(recv_size);
 
+    MPI_Recv( recv_serial.BufferPointer(), recv_size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status );
+
     std::vector<A> recv_vector;
 
     recv_serial.Load(recv_vector);
-
-    MPI_Recv( recv_serial.BufferPointer(), recv_size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status );
 
     A a2, a3;
 
