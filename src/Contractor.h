@@ -1,5 +1,5 @@
 template < typename TContractorKeyType,
-           typename TContractorResidencyType >
+           typename TResidencyType >
 class Contractor
 {
   public:
@@ -11,5 +11,5 @@ class Contractor
     ContractorResidency & Residency() { return mResidency; }
   private:
     ContractorKeyType mKey;
-    ContractorResidencyType mResidency;
+    ResidencyType mResidency;
 }

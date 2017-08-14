@@ -1,18 +1,21 @@
-template< typename TContractorResidencyType>
+template< typename TResidencyType>
 class DistributedAssignmentDataCommunicator
 {
   public:
+    TResidencyType LocalResidency();
+
+
     template< typename TContractorKeyType,
               typename TContractorResidencyContainerType = std::map <TContractorKeyType, TContractorResidencyType> >
-    BuildCommunicator( TContractorResidencyContainerType &, std::vector<TContractorKeyType> &);
+    Build( TContractorResidencyContainerType &, std::vector<TContractorKeyType> &);
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType> >
-    void PutAssignorDataToAssigneeData( TDataContainerType &, TDataContainerType & );
+    void SendAssignorDataToAssigneeData( TDataContainerType &, TDataContainerType & );
 
     template < typename TDataType,
                typename TDataContainerType = std::vector<TDataType> >
-    void PutAssigneeDataToAssingorData( TDataContainerType &, TDataContainerType & );
+    void ReceiveAssigneeDatafromAssingorData( TDataContainerType &, TDataContainerType & );
 
   private:
     template < typename TDataType,

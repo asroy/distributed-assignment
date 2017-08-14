@@ -3,11 +3,8 @@ template< typename TDataType,
 class DistributedAssignmentDataContainer
 {
   public:
-    typedef std::vector <TDataType> DataContainerType;
-    typedef std::map < TContractorResidencyType, std::vector<TDataType> > BufferType;
-    typedef DistributedAssignmentDataCommunicator <TContractorResidencyType> DistributedAssignmentDataCommunicatorType;
-
-    BuildCommunication( DistributedAssignmentDataCommunicatorType & );
+    typedef std::map < TContractorResidencyType, std::vector<TDataType> > DataContainerType;
+    typedef DistributedAssignmentDataCommunicator <TContractorResidencyType> CommunicatorType;
 
     DataContainerType & AssignorData()
     { return mAssignorData; }
@@ -19,11 +16,8 @@ class DistributedAssignmentDataContainer
     void SendAssigneeDataToAssignorData();
 
   private:
-    TDataContainerType mAssignorData;
-    TDataContainerType mAssigneeData;
+    DataContainerType mAssignorData;
+    DataContainerType mAssigneeData;
 
-    TBufferType mAssignorBuffer;
-    TBufferType mAssigneeBuffer;
-
-    DistributedAssignmentDataCommunicatorType* mpDistributedAssignmentDataCommunicator;
+    CommunicatorType* mpCommunicator;
 };
