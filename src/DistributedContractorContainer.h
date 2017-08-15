@@ -1,23 +1,23 @@
 template< TContractorType,
           TContractorKeyType,
-          TContractorResidencyType >
+          TLocationType >
 class DistributedContractorContainer
 {
   public:
     typedef TContractorType* ContractorPointerType;
     typedef std::map<TContractorKeyType,ContractorPointerType> ContractorPointerContainerType;
-    typedef std::map<TContractorKeyType, TContractorResidencyType> ContractorResidencyContainerType;
+    typedef std::map<TContractorKeyType, TLocationType> LocationContainerType;
 
     void AddLocalContractor( const TContractorType & contractor )
     { mLocalContractors[contractor.Key()] = & contractor; }
 
-    void GenerateGlobalContractorsResidency()
+    void GenerateGlobalContractorsLocation()
     {
 
     }
 
-    TContractorResidencyContainerType & GlobalContractorsResidency()
-    { return mGlobalContractorsResidency; }
+    TLocationContainerType & GlobalContractorsLocation()
+    { return mGlobalContractorsLocation; }
 
     ContractorPointerType LocalContractor( TContractorKeyType & key )
     { 
@@ -28,10 +28,10 @@ class DistributedContractorContainer
         return it->second;
     }
 
-    TContractorResidencyType & ContractorResidency( TContractorKeyType & )
+    TLocationType & Location( TContractorKeyType & )
     {
-      ContractorResidencyContainerType::iterator it = mGlobalContractorsResidency.find(key);
-      if( it == mGlobalContractorsResidency.end() )
+      LocationContainerType::iterator it = mGlobalContractorsLocation.find(key);
+      if( it == mGlobalContractorsLocation.end() )
       {
         std::cout << __func__ << std::endl;
         exit();
@@ -72,5 +72,5 @@ class DistributedContractorContainer
 
   private:
     ContractorPointerContainerType mLocalContractors;
-    ContractorResidencyContainerType mGlobalContractorsResidency;
-}
+    LocationContainerType mGlobalContractorsLocation;
+};

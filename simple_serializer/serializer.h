@@ -1,7 +1,7 @@
 #define SERIALIZER_DIRECT_SAVE(TDataType)                         \
     void Save( const TDataType & r_data )                         \
     {                                                             \
-      size_t size = sizeof(r_data);                               \
+      std::size_t size = sizeof(r_data);                               \
                                                                   \
       if( mBufferSaveSize + size > mBufferSize )                  \
       {                                                           \
@@ -19,7 +19,7 @@
 #define SERIALIZER_DIRECT_LOAD(TDataType)                         \
     void Load( TDataType & r_data )                               \
     {                                                             \
-      size_t size = sizeof(r_data);                               \
+      std::size_t size = sizeof(r_data);                               \
                                                                   \
       if( mBufferLoadSize + size > mBufferSize )                  \
       {                                                           \
@@ -52,7 +52,7 @@ class Serializer
       mBufferLoadSize = 0;
     }
 
-    void ReallocateBuffer(size_t buffer_size)
+    void ReallocateBuffer(std::size_t buffer_size)
     {
       if( mpBuffer != nullptr )
         delete[] mpBuffer;
@@ -77,8 +77,11 @@ class Serializer
     char* const BufferPointer() const
     { return mpBuffer; }
 
-    const size_t BufferSaveSize() const
+    std::size_t BufferSaveSize() const
     { return mBufferSaveSize; }
+
+    std::size_t BufferLoadSize() const
+    { return mBufferLoadSize; }
 
     //save basic type
     SERIALIZER_DIRECT_SAVE(bool)
@@ -155,7 +158,7 @@ class Serializer
   private:
     char* mpBuffer;
 
-    size_t mBufferSize;
-    size_t mBufferSaveSize;
-    size_t mBufferLoadSize;
+    std::size_t mBufferSize;
+    std::size_t mBufferSaveSize;
+    std::size_t mBufferLoadSize;
 };

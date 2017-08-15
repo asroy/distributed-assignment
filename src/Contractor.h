@@ -1,15 +1,15 @@
 template < typename TContractorKeyType,
-           typename TResidencyType >
+           typename TLocationType >
 class Contractor
 {
   public:
-    Contractor( const TContractorKeyType & key, const TContractorResidencyType & residency )
-      : mKey{key}, mResidency{residency}
+    Contractor( const TContractorKeyType & key, const TLocationType location )
+      : mKey{key}, mLocation{location}
     { std::cout<<"calling Contractor customed constructor"<<std::endl; }
 
-    ContractorKeyType & Key() { return mKey; }
-    ContractorResidency & Residency() { return mResidency; }
+    TContractorKeyType & Key() { return mKey; }
+    TLocationType & Location() { return mLocation; }
   private:
-    ContractorKeyType mKey;
-    ResidencyType mResidency;
+    TContractorKeyType mKey;
+    TLocationType mLocation;
 }
