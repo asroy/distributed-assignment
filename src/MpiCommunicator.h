@@ -1,5 +1,6 @@
 #include<mpi.h>
 #include"Serializer.h"
+#include"DataProfiler.h"
 
 class MpiCommunicator
 {
@@ -7,6 +8,7 @@ class MpiCommunicator
     typedef MpiLocation LocationType;
     typedef MpiLocation::LessThan LocationLessThanType;
     typedef std::vector<MpiLocation> LocationContainerType;
+    typedef Serializer<DataProfiler> MpiCommSerializer
 
     MpiCommunicator(const MPI_Comm comm)
       : mComm{comm}
@@ -27,23 +29,25 @@ class MpiCommunicator
       mSendSerializers.clear();
       mRecvSerializers.clear();
 
-      mSendSerializers.resize(size);
+      MpiCommSerializer dummy_serializer{1000};
+
+      mSendSerializers.resize(size, );
       mRecvSerializers.resize(size);
 
-      for ( Serializer serializer : mSendSerializers )
-        serializer.IncreaseBufferSize(1000);
+      for ( MpiCommSerializer send_serializer : mSendSerializers )
+        send_serializer.IncreaseBufferSize(1000);
 
-      for ( Serializer serializer : mRecvSerializers )
-        serializer.IncreaseBufferSize(1000);
+      for ( MpiCommSerializer recv_serializer : mRecvSerializers )
+        recv_serializer.IncreaseBufferSize(1000);
     }
 
     LocationType Here()
     {
       int rank, size;
-    
+
       MPI_Comm_Rank(mComm, &rank);
       MPI_Comm_Size(mComm, &size);
-    
+
       LocationType mpi_location( mComm, rank, size );
 
       return mpi_location;
@@ -55,13 +59,13 @@ class MpiCommunicator
     const LocationContainerType & AccessibleLocations() const
     { return mAccessibleLocations; }
 
-    template<typename TDataType> 
+    template<typename TDataType>
     void AlltoAll( std::vector<TDataType> & r_send_datas, std::vector<TDataType> & r_recv_datas, int mpi_tag )
     {
       typedef std::vector<TDataType>::iterator       DataIteratorType;
       typedef std::vector<TDataType>::const_iterator DataConstIteratorType;
-      typedef std::vector<Serializer>::iterator       SerializerIteratorType;
-      typedef std::vector<Serializer>::const_iterator SerializerConstIteratorType;
+      typedef std::vector<MpiCommSerializer>::iterator       SerializerIteratorType;
+      typedef std::vector<MpiCommSerializer>::const_iterator SerializerConstIteratorType;
 
       int mpi_rank, mpi_size;
 
@@ -73,7 +77,7 @@ class MpiCommunicator
 
       // save data to buffer
       for( int i = 0,
-           DataConstIterator      it_send_data       = r_send_datas.begin(), 
+           DataConstIterator      it_send_data       = r_send_datas.begin(),
            SerializerIteratorType it_send_serializer = mSendSerializers.begin();
            i < mpi_size,
            it_send_data       != r_send_datas.end(),
@@ -82,7 +86,7 @@ class MpiCommunicator
            it_send_data       = std::next(it_send_data),
            it_send_serializer = std::next(it_send_serializer); )
       {
-        const Serializer & r_send_serializer = *it_send_serializer;
+        const MpiCommSerializer & r_send_serializer = *it_send_serializer;
 
         std::size_t buffer_save_size;
         bool buffer_is_trivial;
@@ -99,13 +103,13 @@ class MpiCommunicator
       MPI_Alltoall( send_size, 1, MPI_INT, recv_size, 1, MPI_INT, mComm );
 
       //prepare recv serializer
-      for( Serializer serializer : mRecvSerializers )
+      for( MpiCommSerializer serializer : mRecvSerializers )
         serializer.ResetBufferForRecvAndLoad();
 
       // resize recv serializer
       for( int i = 0; i < mpi_size; i++ )
       {
-        if( recv_size[i] > 0 ) 
+        if( recv_size[i] > 0 )
           mRecvSerializer[i].IncreaseBufferSize(recv_size[i]);
       }
 
@@ -134,13 +138,13 @@ class MpiCommunicator
       {
         if( send_size[i] > 0 )
         {
-          MPI_Isend( (*it_send_serializer).BufferPointer(), send_size[i], MPI_CHAR, i, 0, mComm, reqs[k] ); 
+          MPI_Isend( (*it_send_serializer).BufferPointer(), send_size[i], MPI_CHAR, i, 0, mComm, reqs[k] );
           k++;
         }
 
         if( recv_size[i] > 0 )
         {
-          MPI_Irecv( (*it_recv_serializer).BufferPointer(), recv_size[i], MPI_CHAR, i, 0, mComm, reqs[k] ); 
+          MPI_Irecv( (*it_recv_serializer).BufferPointer(), recv_size[i], MPI_CHAR, i, 0, mComm, reqs[k] );
           k++;
         }
       }
@@ -149,7 +153,7 @@ class MpiCommunicator
       MPI_Waitall( num_event, reqs, status );
 
       // load data from buffer
-      for( DataIterator           it_recv_data       = r_recv_datas.begin(), 
+      for( DataIterator           it_recv_data       = r_recv_datas.begin(),
            SerializerIteratorType it_recv_serializer = mRecvSerializers.begin();
            it_recv_data       != r_recv_datas.end(),
            it_recv_serializer != mRecvSerializers.end();
@@ -168,8 +172,8 @@ class MpiCommunicator
     template<typename TDataType>
     void AllGather( TDataType & r_data, std::vector<TDataType> & r_datas )
     {
-      typedef std::vector<Serializer>::iterator       SerializerIteratorType;
-      typedef std::vector<Serializer>::const_iterator SerializerConstIteratorType;
+      typedef std::vector<MpiCommSerializer>::iterator       SerializerIteratorType;
+      typedef std::vector<MpiCommSerializer>::const_iterator SerializerConstIteratorType;
 
       int mpi_rank, mpi_size;
 
@@ -177,7 +181,7 @@ class MpiCommunicator
       MPI_Comm_Size(MPI_COMM_WORLD, &mpi_size);
 
       // save data to buffer
-      Serializer & r_send_serializer = mSendSerializer[mpi_rank];
+      MpiCommSerializer & r_send_serializer = mSendSerializer[mpi_rank];
       r_send_serializer.Save[r_data];
       int send_size = (int) r_send_serializer.BufferSaveSize();
 
@@ -187,12 +191,12 @@ class MpiCommunicator
 
 
 
-      
 
 
 
 
-      
+
+
 
 
     }
@@ -204,12 +208,12 @@ class MpiCommunicator
     class MpiLocation
     {
       public:
-        MpiLocation( MPI_Comm comm, int rank, int size ) 
+        MpiLocation( MPI_Comm comm, int rank, int size )
           : mComm{comm},
             mRank{rank},
             mSize{size}
         { }
-    
+
         struct LessThan
         {
           bool operator() ( const MpiLocation & a, const MpiLocation & b ) const
@@ -234,6 +238,6 @@ class MpiCommunicator
     LocationContainerType mAllLocations;
     LocationContainerType mAccessibleLocations;
 
-    std::vector<Serializer> mSendSerializers;
-    std::vector<Serializer> mRecvSerializers;
+    std::vector<MpiCommSerializer> mSendSerializers;
+    std::vector<MpiCommSerializer> mRecvSerializers;
 };
