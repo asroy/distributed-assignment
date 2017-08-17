@@ -21,7 +21,7 @@ class Serializer
     ~Serializer()
     { delete [] mpBuffer; }
     
-    void IncreaseBufferSize(std::size_t buffer_size)
+    void IncreaseBufferSize(const std::size_t buffer_size)
     {
       if( mpBuffer == nullptr )
         mpBuffer = new char[buffer_size];
@@ -32,9 +32,10 @@ class Serializer
       else if( mpBuffer < buffer_size  )
       {
         char *p = new char[buffer_size];
-        mBufferSize = buffer_size;
         std::memcpy( p, mpBuffer, mBufferSize );
+        delete[] mpBuffer;
         mpBuffer = p;
+        mBufferSize = buffer_size;
       }
       else
         std::cout << __func__ << "Buffer size is bigger than requested size. Do nothing" << std::enl;
