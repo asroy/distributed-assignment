@@ -31,10 +31,10 @@ class MpiCommunicator
       mRecvSerializers.resize(size);
 
       for ( Serializer serializer : mSendSerializers )
-        serializer.ReallocateBuffer(1000);
+        serializer.IncreaseBufferSize(1000);
 
       for ( Serializer serializer : mRecvSerializers )
-        serializer.ReallocateBuffer(1000);
+        serializer.IncreaseBufferSize(1000);
     }
 
     LocationType Here()
@@ -84,24 +84,29 @@ class MpiCommunicator
       {
         const Serializer & r_send_serializer = *it_send_serializer;
 
-        r_send_serializer.ClearBuffer();
+        std::size_t buffer_save_size;
+        bool buffer_is_trivial;
 
-        r_send_serializer.Save(*it_send_data);
+        r_send_serializer.FreshSave(*it_send_data, buffer_save_size, buffer_is_trivial );
 
-        if ( r_send_serializer.SaveIsTrivial() )
+        if ( buffer_is_trivial )
           send_size[i] = 0;
         else
-          send_size[i] = (int) r_send_serializer.BufferSaveSize();
+          send_size[i] = (int) buffer_save_size;
       }
 
       // receive message size
       MPI_Alltoall( send_size, 1, MPI_INT, recv_size, 1, MPI_INT, mComm );
 
+      //prepare recv serializer
+      for( Serializer serializer : mRecvSerializers )
+        serializer.ResetBufferForRecvAndLoad();
+
       // resize recv serializer
       for( int i = 0; i < mpi_size; i++ )
       {
         if( recv_size[i] > 0 ) 
-          mRecvSerializer[i].ResizeBiggerBuffer(recv_size[i]);
+          mRecvSerializer[i].IncreaseBufferSize(recv_size[i]);
       }
 
       int num_event = 0;
@@ -151,7 +156,7 @@ class MpiCommunicator
            it_recv_data       = std::next(it_recv_data),
            it_recv_serializer = std::next(it_recv_serializer); )
       {
-        *it_recv_serializer.Load(*it_recv_data);
+        *it_recv_serializer.FreshLoad(*it_recv_data);
       }
 
       delete [] send_size;
