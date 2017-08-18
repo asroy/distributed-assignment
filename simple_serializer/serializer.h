@@ -67,7 +67,7 @@ class Serializer
       return *p;
     }
 
-    void WriteBufferHeader(const TBufferHeaderType buffer_header)
+    void WriteBufferHeader(const TBufferHeaderType & buffer_header) const
     {
       if( mBufferSize < sizeof(buffer_header) )
       {
@@ -79,10 +79,11 @@ class Serializer
     }
 
     template<typename TDataType>
-    void FreshSave( const TDataType & r_data )
+    int FreshSave( const TDataType & r_data )
     {
       ResetBufferSavePos();
       Save<TDataType> (r_data);
+      return BufferSavePos();
     }
 
     template<typename TDataType>
