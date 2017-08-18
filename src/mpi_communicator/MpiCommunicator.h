@@ -11,36 +11,27 @@ class MpiCommunicator
     typedef Serializer<DataProfile> MpiCommSerializer;
 
     MpiCommunicator()
-      :mComm{MPI_COMM_WORLD}
+      : mComm{MPI_COMM_WORLD}
     {}
 
     MpiCommunicator(const MPI_Comm comm)
       : mComm{comm}
+    {}
+
+    ~MpiCommunicator()
+    {}
+
+    BuildCompleteCommunication()
     {
       MPI_Comm_Rank(mComm, &rank);
       MPI_Comm_Size(mComm, &size);
 
-      mAccessibleLocations.clear();
-      mAccessibleLocations.push_back(MpiLocation mpi_location(mComm, rank, size);
-
-      mAllLocations.clear();
-      for( int i = 0; i < size; i++ )
-      {
-        MpiLocation mpi_location(mComm, i, size);
-        mAllLocations.push_back(mpi_location);
-      }
-
       mSendSerializers.clear();
       mRecvSerializers.clear();
 
-      MpiCommSerializer dummy_serializer(1000);
-
-      mSendSerializers.resize(size, dummy_serializer);
-      mRecvSerializers.resize(size, dummy_serializer);
-   }
-
-   ~MpiCommunicator()
-   {}
+      mSendSerializers.resize(size);
+      mRecvSerializers.resize(size);
+    }
 
     LocationType Here()
     {
@@ -53,12 +44,6 @@ class MpiCommunicator
 
       return mpi_location;
     }
-
-    const LocationContainerType & AllLocations() const
-    { return mAllLocations; }
-
-    const LocationContainerType & AccessibleLocations() const
-    { return mAccessibleLocations; }
 
     template<typename TDataType>
     void AlltoAll( std::vector<TDataType> & r_send_datas, std::vector<TDataType> & r_recv_datas, int mpi_tag )
@@ -224,7 +209,7 @@ class MpiCommunicator
       for( int i = 1; i < mpi_size; i++ )
       {
         send_size[i] = send_size[0];
-        mSendSerializers[i].CopyBuffer(mSendSerializers[0]);
+        mSendSerializers[i].CopyBufferContent(mSendSerializers[0]);
       }
 
       //receive message size
@@ -325,10 +310,7 @@ class MpiCommunicator
       delete [] MPI_Status;
     }
 
-
   private:
-    MPI_Comm mComm;
-
     class MpiLocation
     {
       public:
@@ -341,7 +323,14 @@ class MpiCommunicator
         struct LessThan
         {
           bool operator() ( const MpiLocation & a, const MpiLocation & b ) const
-          { return ( a.mRank < b.mRank ); }
+          { 
+            if( a.mComm != b.mComm )
+            {
+              std::cout << __func__ << "two MpiLocation not in the same not in the same MPI communicator! exit" << std::endl;
+              exit(EXIT_FAILURE);
+            }
+            return ( a.mRank < b.mRank );
+          }
         }
 
         MPI_Comm Comm() const
@@ -359,9 +348,7 @@ class MpiCommunicator
         int mSize;
     };
 
-    LocationContainerType mAllLocations;
-    LocationContainerType mAccessibleLocations;
-
+    MPI_Comm mComm;
     std::vector<MpiCommSerializer> mSendSerializers;
     std::vector<MpiCommSerializer> mRecvSerializers;
 };

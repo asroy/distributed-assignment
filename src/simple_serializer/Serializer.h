@@ -7,19 +7,33 @@ class Serializer
         mBufferSize{0},
         mBufferHead{0},
         mBufferSavePos{0},
-        mBufferLoadPos{0},
+        mBufferLoadPos{0}
     {
-      //reserve space for buffer header
+      //reserve enough space for buffer header
       TBufferHeaderType buffer_header();
       std::size_t buffer_header_size = sizeof(buffer_header);
-      IncreaseBufferSize(buffer_header_size);
+      std::size_t reserved_size = std::max(buffer_header_size,1000);
+      IncreaseBufferSize(reserved_size);
 
-      //
+      //set buffer head position
       mBufferHead = buffer_header_size;
       ResetBufferLoadPos();
       ResetBufferSavePos();
     }
 
+    //copy constructor: don't copy mpBuffer value, allocate new memory instead
+    Serializer( const Serializer & r_source_serializer )
+      : mpBuffer{nullptr},
+        mBufferSize{r_source_serializer.mBufferSize},
+        mBufferHead{r_source_serializer.mBufferHead},
+        mBufferSavePos{r_source_serializer.mBufferSavePos},
+        mBufferLoadPos{r_source_serializer.mBufferLoadPos}
+    {
+      mpBuffer = new char[mBufferSize];
+      std::memcpy( mpBuffer, r_source_serializer.mpBuffer, mBufferSize );
+    }
+
+    //reserve at least size of buffer_size
     Serializer(std::size_t buffer_size)
       : Serializer()
     {
@@ -27,7 +41,10 @@ class Serializer
     }
 
     ~Serializer()
-    { delete [] mpBuffer; }
+    { 
+      if(mpBuffer)
+        delete [] mpBuffer;
+    }
 
     void IncreaseBufferSize( const std::size_t buffer_size )
     {
@@ -51,7 +68,7 @@ class Serializer
         std::cout << __func__ << "Buffer size is bigger than requested size. Do nothing" << std::endl;
     }
 
-    void CopyBuffer( const Serializer & r_source_serializer )
+    void CopyBufferContent( const Serializer & r_source_serializer )
     {
       mBufferHead = r_source_serializer.mBufferHead;
       mBufferSavePos = r_source_serializer.mBufferSavePos;
