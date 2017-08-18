@@ -51,6 +51,18 @@ class Serializer
         std::cout << __func__ << "Buffer size is bigger than requested size. Do nothing" << std::endl;
     }
 
+    void CopyBuffer( const Serializer & r_source_serializer )
+    {
+      mBufferHead = r_source_serializer.mBufferHead;
+      mBufferSavePos = r_source_serializer.mBufferSavePos;
+      mBufferLoadPos = r_source_serializer.mBufferLoadPos;
+
+      //Buffer size would be equal or larger than source buffer size
+      IncreaseBufferSize( r_source_serializer.mBufferSize );
+
+      std::memcpy( mpBuffer, r_source_serializer.mpBuffer, r_source_serializer.mBufferSize );
+    }
+
     char* const BufferPointer() const
     { return mpBuffer; }
 
