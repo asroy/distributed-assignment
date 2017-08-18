@@ -8,7 +8,11 @@ class MpiCommunicator
     typedef MpiLocation LocationType;
     typedef MpiLocation::LessThan LocationLessThanType;
     typedef std::vector<MpiLocation> LocationContainerType;
-    typedef Serializer<DataProfile> MpiCommSerializer
+    typedef Serializer<DataProfile> MpiCommSerializer;
+
+    MpiCommunicator()
+      :mComm{MPI_COMM_WORLD}
+    {}
 
     MpiCommunicator(const MPI_Comm comm)
       : mComm{comm}
@@ -17,23 +21,26 @@ class MpiCommunicator
       MPI_Comm_Size(mComm, &size);
 
       mAccessibleLocations.clear();
-      mAccessibleLocations.push_back(MpiLocation mpi_location(MPI_COMM_WORLD, rank, size);
+      mAccessibleLocations.push_back(MpiLocation mpi_location(mComm, rank, size);
 
       mAllLocations.clear();
       for( int i = 0; i < size; i++ )
       {
-        MpiLocation mpi_location(MPI_COMM_WORLD, i, size);
+        MpiLocation mpi_location(mComm, i, size);
         mAllLocations.push_back(mpi_location);
       }
 
       mSendSerializers.clear();
       mRecvSerializers.clear();
 
-      MpiCommSerializer dummy_serializer{1000};
+      MpiCommSerializer dummy_serializer(1000);
 
       mSendSerializers.resize(size, dummy_serializer);
       mRecvSerializers.resize(size, dummy_serializer);
    }
+
+   ~MpiCommunicator()
+   {}
 
     LocationType Here()
     {
