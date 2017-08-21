@@ -5,13 +5,11 @@ class B
     double z;
     char c;
 
-    void Save( Serializer & r_serializer, bool & r_i_am_trivial ) const
+    void Save( Serializer & r_serializer ) const
     {
-      r_serializer.Save(i);
+      r_serializer.Save<int,int>(i);
       r_serializer.Save(z);
       r_serializer.Save(c);
-
-      r_i_am_trivial = false;
     }
 
     void Load( Serializer & r_serializer )
@@ -19,12 +17,6 @@ class B
       r_serializer.Load(i);
       r_serializer.Load(z);
       r_serializer.Load(c);
-    }
-
-    void LoadTrivial( Serializer & r_serializer )
-    {
-      std::cout << __func__ << "not defined" << std::endl;
-      exit(EXIT_FAILURE);
     }
 
   friend class Serializer;

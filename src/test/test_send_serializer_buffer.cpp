@@ -22,8 +22,6 @@ void type_name(T u)
   free(realname);
 }
 
-
-
 int main( int argc, char** argv )
 {
   int rank, size;
@@ -70,14 +68,16 @@ int main( int argc, char** argv )
 
     Serializer send_serial;
 
-    send_serial.ReallocateBuffer(200);
-
+    // buffer header
+    send_serial.ReserveSpaceForBufferHeader<DataProfile>();
 
     const std::vector<A> & r_send_vector = send_vector;
-    send_serial.Save(r_send_vector);
+    DataProfile send_data_profile = DataProfile::Default().Profile(r_send_vector).MakeFromSender();
+    send_serial.WriteBufferHeader(send_data_profile);
 
-    int send_size = (int) send_serial.BufferSaveSize();
-
+    //save data
+    int send_size = (int) send_serial.FreshSave(r_send_vector);
+    
     std::cout << rank << ": send_size " << send_size << std::endl;
 
     MPI_Send( &send_size, 1, MPI_INT, 1, 0, MPI_COMM_WORLD );
@@ -98,13 +98,17 @@ int main( int argc, char** argv )
 
     Serializer recv_serial;
 
-    recv_serial.ReallocateBuffer(recv_size);
-
+    // buffer header
+    recv_serial.ReserveSpaceForBufferHeader<DataProfile>();
+    DataProfile recv_data_profile = DataProfile::Default().MakeNotFromSender();
+    recv_serial.WriteBufferHeader(recv_data_profile);
+    
+    //receive
     MPI_Recv( recv_serial.BufferPointer(), recv_size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status );
 
     std::vector<A> recv_vector;
 
-    recv_serial.Load(recv_vector);
+    recv_serial.FreshLoad(recv_vector);
 
     A a2, a3;
 

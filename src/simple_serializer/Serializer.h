@@ -1,4 +1,5 @@
 #include<vector>
+#include<cstring>
 #include<iostream>
 
 class Serializer
@@ -77,8 +78,9 @@ class Serializer
     { return mpBuffer; }
 
     template<typename TBufferHeaderType>
-    void ReserveSpaceForBufferHeader(const TBufferHeaderType dummy)
+    void ReserveSpaceForBufferHeader()
     {
+      TBufferHeaderType dummy;
       mBufferHead = sizeof(dummy);
     }
 
@@ -119,8 +121,7 @@ class Serializer
     }
 
     //save basic datatype
-    template<typename TDataType,
-             typename TDummyType>
+    template<typename TDataType, typename TDummyType>
     void Save( const TDataType & r_data )
     {
       std::size_t size = sizeof(r_data);
@@ -136,8 +137,7 @@ class Serializer
     }
 
     //load basic datatype
-    template<typename TDataType,
-             typename TDummyType>
+    template<typename TDataType, typename TDummyType>
     void Load( TDataType & r_data )
     {
       std::size_t size = sizeof(r_data);
@@ -220,18 +220,18 @@ class Serializer
 };
 
 
-template void Serializer::Save<bool,int> ( const bool &);
-template void Serializer::Save<char, int> ( const char &);
-template void Serializer::Save<int, int> ( const int &);
-template void Serializer::Save<long, int> ( const long &);
-template void Serializer::Save<unsigned int, int> ( const unsigned int  &);
-template void Serializer::Save<unsigned long, int> ( const unsigned long &);
-template void Serializer::Save<double, int> ( const double &);
+// template void Serializer::Save<bool,int> ( const bool &);
+// template void Serializer::Save<char, int> ( const char &);
+// template void Serializer::Save<int, int> ( const int &);
+// template void Serializer::Save<long, int> ( const long &);
+// template void Serializer::Save<unsigned int, int> ( const unsigned int  &);
+// template void Serializer::Save<unsigned long, int> ( const unsigned long &);
+// template void Serializer::Save<double, int> ( const double &);
 
-template void Serializer::Load<bool,int> (bool &);
-template void Serializer::Load<char, int> (char &);
-template void Serializer::Load<int, int> (int &);
-template void Serializer::Load<long, int> (long &);
-template void Serializer::Load<unsigned int, int> (unsigned int  &);
-template void Serializer::Load<unsigned long, int> (unsigned long &);
-template void Serializer::Load<double, int> (double &);
+// template void Serializer::Load<bool,int> (bool &);
+// template void Serializer::Load<char, int> (char &);
+// template void Serializer::Load<int, int> (int &);
+// template void Serializer::Load<long, int> (long &);
+// template void Serializer::Load<unsigned int, int> (unsigned int  &);
+// template void Serializer::Load<unsigned long, int> (unsigned long &);
+// template void Serializer::Load<double, int> (double &);
