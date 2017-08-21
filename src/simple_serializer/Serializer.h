@@ -1,4 +1,6 @@
-template<typename TBufferHeaderType>
+#include<vector>
+#include<iostream>
+
 class Serializer
 {
   public:
@@ -9,16 +11,7 @@ class Serializer
         mBufferSavePos{0},
         mBufferLoadPos{0}
     {
-      //reserve enough space for buffer header
-      TBufferHeaderType buffer_header();
-      std::size_t buffer_header_size = sizeof(buffer_header);
-      std::size_t reserved_size = std::max(buffer_header_size,1000);
-      IncreaseBufferSize(reserved_size);
-
-      //set buffer head position
-      mBufferHead = buffer_header_size;
-      ResetBufferLoadPos();
-      ResetBufferSavePos();
+      IncreaseBufferSize((std::size_t)1000);
     }
 
     //copy constructor: don't copy mpBuffer value, allocate new memory instead
@@ -56,7 +49,7 @@ class Serializer
         mBufferSavePos = 0;
         mBufferLoadPos = 0;
       }
-      else if( mpBuffer < buffer_size )
+      else if( mBufferSize < buffer_size )
       {
         char *p = new char[buffer_size];
         std::memcpy( p, mpBuffer, mBufferSize );
@@ -83,10 +76,15 @@ class Serializer
     char* const BufferPointer() const
     { return mpBuffer; }
 
-    const TBufferHeaderType ReadBufferHeader() const
+    template<typename TBufferHeaderType>
+    void ReserveSpaceForBufferHeader(const TBufferHeaderType dummy)
     {
-      TBufferHeaderType buffer_header;
+      mBufferHead = sizeof(dummy);
+    }
 
+    template<typename TBufferHeaderType>
+    void ReadBufferHeader(TBufferHeaderType & buffer_header) const
+    {
       if( mBufferSize < sizeof( buffer_header ) )
       {
         std::cout << __func__ << "wrong: buffer size smaller than buffer header size! exit" << std::endl;
@@ -96,13 +94,11 @@ class Serializer
       return *p;
     }
 
-    void WriteBufferHeader(const TBufferHeaderType & buffer_header) const
+    template<typename TBufferHeaderType>
+    void WriteBufferHeader(const TBufferHeaderType & buffer_header)
     {
-      if( mBufferSize < sizeof(buffer_header) )
-      {
-        std::cout << __func__ << "wrong: buffer size smaller than buffer header size! exit" << std::endl;
-        exit(EXIT_FAILURE);
-      }
+      std::size_t buffer_header_size = sizeof(buffer_header);
+      IncreaseBufferSize(buffer_header_size);
       TBufferHeaderType* p = (TBufferHeaderType*) mpBuffer;
       *p = buffer_header;
     }
@@ -207,10 +203,10 @@ class Serializer
 
   private:
     void ResetBufferSavePos()
-    { mBufferSavePos = mBufferSaveHead; }
+    { mBufferSavePos = mBufferHead; }
 
     void ResetBufferLoadPos()
-    { mBufferLoadPos = mBufferSaveHead; }
+    { mBufferLoadPos = mBufferHead; }
 
     std::size_t BufferSavePos() const
     { return mBufferSavePos; }
@@ -223,23 +219,19 @@ class Serializer
     std::size_t mBufferLoadPos;
 };
 
-template Serializer::Save<bool,int> ( const bool &);
-template Serializer::Load<bool,int> (       bool &);
 
-template Serializer::Save<char, int> ( const char &);
-template Serializer::Load<char, int> (       char &);
+template void Serializer::Save<bool,int> ( const bool &);
+template void Serializer::Save<char, int> ( const char &);
+template void Serializer::Save<int, int> ( const int &);
+template void Serializer::Save<long, int> ( const long &);
+template void Serializer::Save<unsigned int, int> ( const unsigned int  &);
+template void Serializer::Save<unsigned long, int> ( const unsigned long &);
+template void Serializer::Save<double, int> ( const double &);
 
-template Serializer::Save<int, int> ( const int &);
-template Serializer::Load<int, int> (       int &);
-
-template Serializer::Save<long, int> ( const long &);
-template Serializer::Load<long, int> (       long &);
-
-template Serializer::Save<unsigned int,  int> ( const unsigned int  &);
-template Serializer::Load<unsigned int,  int> (       unsigned int  &);
-
-template Serializer::Save<unsigned long, int> ( const unsigned long &);
-template Serializer::Load<unsigned long, int> ( const unsigned long &);
-
-template Serializer::Save<double, int> ( const double &);
-template Serializer::Load<double, int> ( const double &);
+template void Serializer::Load<bool,int> (bool &);
+template void Serializer::Load<char, int> (char &);
+template void Serializer::Load<int, int> (int &);
+template void Serializer::Load<long, int> (long &);
+template void Serializer::Load<unsigned int, int> (unsigned int  &);
+template void Serializer::Load<unsigned long, int> (unsigned long &);
+template void Serializer::Load<double, int> (double &);

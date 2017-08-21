@@ -1,6 +1,24 @@
 #include<mpi.h>
 #include"Serializer.h"
 #include"DataProfile.h"
+#include<cstdlib>
+#include"Serializer.h"
+
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<bool,int> ( const bool &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<char, int> ( const char &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<int, int> ( const int &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<long, int> ( const long &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<unsigned int, int> ( const unsigned int  &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<unsigned long, int> ( const unsigned long &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Save<double, int> ( const double &);
+
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<bool,int> (bool &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<char, int> (char &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<int, int> (int &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<long, int> (long &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<unsigned int, int> (unsigned int  &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<unsigned long, int> (unsigned long &);
+template<typename TBufferHeaderType> void Serializer<TBufferHeaderType>::Load<double, int> (double &);
 
 class MpiCommunicator
 {

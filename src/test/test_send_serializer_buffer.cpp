@@ -5,8 +5,9 @@
 #include<typeinfo>
 #include<cxxabi.h>
 #include<vector>
-#include "Serializer.h"
-#include "my_data.h"
+#include"Serializer.h"
+#include"DataProfile.h"
+#include"my_data.h"
 
 template<typename T>
 void type_name(T u)
@@ -21,7 +22,7 @@ void type_name(T u)
   free(realname);
 }
 
-template void Serializer::Save<A>( const std::vector<A> & );
+
 
 int main( int argc, char** argv )
 {

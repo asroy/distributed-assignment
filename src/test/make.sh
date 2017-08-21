@@ -1,2 +1,17 @@
 #!/bin/bash
-mpic++ -g -O0 -std=c++11 -I../simple_serializer test_send_serializer_buffer.cpp
+printf "\n"
+printf "\n"
+printf "\n"
+printf "\n"
+printf "\n"
+printf "\n"
+printf "\n"
+printf "\n"
+printf "\n"
+
+mpic++ -g -O0 -std=c++11 -Wall -I../simple_serializer -c ../simple_serializer/DataProfile.cpp
+#mpic++ -g -O0 -std=c++11 -Wall -I../simple_serializer -c ../simple_serializer/Serializer.cpp
+#mpic++ -g -O0 -std=c++11 -Wall -I../simple_serializer -c test_send_serializer_buffer.cpp
+#mpic++ -g -O0 -std=c++11 -Wall Serializer.o test_send_serializer_buffer.o -o test
+
+
