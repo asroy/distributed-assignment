@@ -1,12 +1,16 @@
 #include<vector>
 #include<cstring>
 #include<iostream>
+#include"TypeId.h"
 
 
 //save basic datatype
 #define SERIALIZER_SAVE_BASIC_TYPE(TDataType)                    \
 void Save( const TDataType & r_data )                            \
 {                                                                \
+  std::cout<<__func__<<"save basic type "<<std::endl;            \
+  type_name(r_data);                                             \
+                                                                 \
   std::size_t size = sizeof(r_data);                             \
                                                                  \
   if( mBufferSavePos + size > mBufferSize )                      \
@@ -17,12 +21,17 @@ void Save( const TDataType & r_data )                            \
   *p = r_data;                                                   \
                                                                  \
   mBufferSavePos += size;                                        \
+                                                                 \
+  std::cout<<"value: "<<r_data<<std::endl;                       \
 }
 
 //load basic datatype
 #define SERIALIZER_LOAD_BASIC_TYPE(TDataType)                                                    \
 void Load( TDataType & r_data )                                                                  \
 {                                                                                                \
+  std::cout<<__func__<<"load basic type "<<std::endl;                                            \
+  type_name(r_data);                                                                             \
+                                                                                                 \
   std::size_t size = sizeof(r_data);                                                             \
                                                                                                  \
   if( mBufferLoadPos + size > mBufferSize )                                                      \
@@ -71,7 +80,7 @@ class Serializer
     }
 
     ~Serializer()
-    { 
+    {
       if(mpBuffer)
         delete [] mpBuffer;
     }
@@ -130,7 +139,7 @@ class Serializer
         exit(EXIT_FAILURE);
       }
       const TBufferHeaderType* const p = (TBufferHeaderType*) mpBuffer;
-      return *p;
+      buffer_header = *p;
     }
 
     template<typename TBufferHeaderType>
@@ -143,7 +152,7 @@ class Serializer
     }
 
     template<typename TDataType>
-    int FreshSave( const TDataType & r_data )
+    std::size_t FreshSave( const TDataType & r_data )
     {
       ResetBufferSavePos();
       Save(r_data);
@@ -151,10 +160,11 @@ class Serializer
     }
 
     template<typename TDataType>
-    void FreshLoad( TDataType & r_data )
+    std::size_t FreshLoad( TDataType & r_data )
     {
       ResetBufferLoadPos();
       Load(r_data);
+      return BufferLoadPos();
     }
 
     //save basic data type
@@ -183,6 +193,9 @@ class Serializer
     {
       typedef typename std::vector<TDataType>::size_type SizeType;
 
+      std::cout<<__func__<<"save vector "<<std::endl;
+      type_name(r_vector);
+
       SizeType vector_size = r_vector.size();
 
       Save(vector_size);
@@ -197,6 +210,9 @@ class Serializer
     {
       typedef typename std::vector<TDataType>::size_type SizeType;
 
+      std::cout<<__func__<<"load vector "<<std::endl;
+      type_name(r_vector);
+
       r_vector.clear();
 
       SizeType vector_size;
@@ -205,7 +221,7 @@ class Serializer
 
       r_vector.resize(vector_size);
 
-      for( TDataType data : r_vector )
+      for( TDataType & data : r_vector )//data is reference
         Load(data);
     }
 
@@ -213,6 +229,9 @@ class Serializer
     template<typename TDataType>
     void Save( const TDataType & r_data )
     {
+      std::cout<<__func__<<"save user data "<<std::endl;
+      type_name(r_data);
+
       r_data.Save(*this);
     }
 
@@ -220,6 +239,9 @@ class Serializer
     template<typename TDataType>
     void Load( TDataType & r_data )
     {
+      std::cout<<__func__<<"load user data "<<std::endl;
+      type_name(r_data);
+
       r_data.Load(*this);
     }
 
@@ -232,6 +254,9 @@ class Serializer
 
     std::size_t BufferSavePos() const
     { return mBufferSavePos; }
+
+    std::size_t BufferLoadPos() const
+    { return mBufferLoadPos; }
 
     char* mpBuffer;
 

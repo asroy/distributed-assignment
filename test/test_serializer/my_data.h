@@ -41,7 +41,7 @@ class A
       r_serializer.Save(i);
       r_serializer.Save(x);
       for( int i = 0; i < 2; i++ )
-        r_serializer.Save(y[1]);
+        r_serializer.Save(y[i]);
       r_serializer.Save(b);
     }
 
@@ -50,7 +50,7 @@ class A
       r_serializer.Load(i);
       r_serializer.Load(x);
       for( int i = 0; i < 2; i++ )
-        r_serializer.Load(y[1]);
+        r_serializer.Load(y[i]);
       r_serializer.Load(b);
     }
 

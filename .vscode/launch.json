@@ -37,20 +37,20 @@
             "secret": "my_secret",
             "host": "localhost"
         },
-        { 
+        {
             "name": "GDB Attach proc 0",
             "type": "cppdbg",
             "request": "attach",
-            "program": "${workspaceRoot}/a.out",
+            "program": "${workspaceRoot}/test/test_serializer/test",
             "processId": "${command:pickProcess}",
             "MIMode": "gdb",
             "externalConsole": false,
         },
-        { 
+        {
             "name": "GDB Attach proc 1",
             "type": "cppdbg",
             "request": "attach",
-            "program": "${workspaceRoot}/a.out",
+            "program": "${workspaceRoot}/test/test_serializer/test",
             "processId": "${command:pickProcess}",
             "MIMode": "gdb",
             "externalConsole": false,
