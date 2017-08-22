@@ -1,7 +1,7 @@
 #include<vector>
 
 //profile basic type
-#define DATAPROFILE_PROFILE(TDATATYPE)                                      \
+#define DATAPROFILE_PROFILE_BASIC_TYPE(TDATATYPE)                                      \
 DataProfile Profile( const TDATATYPE & r_data ) const                       \
 {                                                                           \
     std::cout<<"Profile basic type"<<std::endl;                             \
@@ -59,14 +59,14 @@ class DataProfile
     { return mIsTrivial; }
 
     //profile basic data type
-    DATAPROFILE_PROFILE(bool)
-    DATAPROFILE_PROFILE(char)
-    DATAPROFILE_PROFILE(int)
-    DATAPROFILE_PROFILE(long)
-    DATAPROFILE_PROFILE(unsigned int)
-    DATAPROFILE_PROFILE(unsigned long)
-    DATAPROFILE_PROFILE(float)
-    DATAPROFILE_PROFILE(double)
+    DATAPROFILE_PROFILE_BASIC_TYPE(bool)
+    DATAPROFILE_PROFILE_BASIC_TYPE(char)
+    DATAPROFILE_PROFILE_BASIC_TYPE(int)
+    DATAPROFILE_PROFILE_BASIC_TYPE(long)
+    DATAPROFILE_PROFILE_BASIC_TYPE(unsigned int)
+    DATAPROFILE_PROFILE_BASIC_TYPE(unsigned long)
+    DATAPROFILE_PROFILE_BASIC_TYPE(float)
+    DATAPROFILE_PROFILE_BASIC_TYPE(double)
 
     //profile std::vector
     template<typename TDataType>
@@ -86,7 +86,7 @@ class DataProfile
     //profile user defined data type
     template<typename TDataType>
     DataProfile Profile ( const TDataType & r_data ) const
-    { 
+    {
       std::cout<<"Profile user defined data"<<std::endl;
       return r_data.Profile(*this);
     }

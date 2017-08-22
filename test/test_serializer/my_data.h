@@ -1,3 +1,5 @@
+#include<iostream>
+
 class B
 {
   public:
@@ -19,13 +21,23 @@ class B
       r_serializer.Load(c);
     }
 
-    DataProfile Profile( DataProfile & r_data_profile )
+    DataProfile Profile( DataProfile & r_data_profile ) const
     {
       return r_data_profile.MakeNonTrivial();
     }
 
+    void Print( const DataPrinter & r_data_printer ) const
+    {
+      std::cout << "{B: ";
+      r_data_printer.Print(i);
+      r_data_printer.Print(z);
+      r_data_printer.Print(c);
+      std::cout << "}";
+    }
+
   friend class Serializer;
   friend class DataProfile;
+  friend class DataPrinter;
 };
 
 class A
@@ -54,12 +66,24 @@ class A
       r_serializer.Load(b);
     }
 
-    DataProfile Profile( DataProfile & r_data_profile )
+    DataProfile Profile( DataProfile & r_data_profile ) const
     {
       return r_data_profile.MakeNonTrivial();
     }
 
+    void Print( const DataPrinter & r_data_printer ) const
+    {
+      std::cout << "{A: ";
+      r_data_printer.Print(i);
+      r_data_printer.Print(x);
+      for( int i = 0; i < 2; i++ )
+        r_data_printer.Print(y[i]);
+      r_data_printer.Print(b);
+      std::cout << "}";
+    }
+
   friend class Serializer;
   friend class DataProfile;
+  friend class DataPrinter;
 };
 

@@ -221,8 +221,8 @@ class Serializer
 
       r_vector.resize(vector_size);
 
-      for( TDataType & data : r_vector )//data is reference
-        Load(data);
+      for( TDataType & r_data : r_vector )//data is reference
+        Load(r_data);
     }
 
     //save user data type
