@@ -9,7 +9,7 @@ class MpiCommunicator
     typedef MpiLocation LocationType;
     typedef MpiLocation::LessThan LocationLessThanType;
     typedef std::vector<MpiLocation> LocationContainerType;
-    typedef Serializer<DataProfile> MpiCommSerializer;
+    typedef Serializer<DataProfile> Serializer;
 
     MpiCommunicator()
       : mComm{MPI_COMM_WORLD}
@@ -51,8 +51,8 @@ class MpiCommunicator
     {
       typedef std::vector<TDataType>::iterator       DataIteratorType;
       typedef std::vector<TDataType>::const_iterator DataConstIteratorType;
-      typedef std::vector<MpiCommSerializer>::iterator       SerializerIteratorType;
-      typedef std::vector<MpiCommSerializer>::const_iterator SerializerConstIteratorType;
+      typedef std::vector<Serializer>::iterator       SerializerIteratorType;
+      typedef std::vector<Serializer>::const_iterator SerializerConstIteratorType;
 
       int mpi_rank, mpi_size;
 
@@ -73,7 +73,7 @@ class MpiCommunicator
            it_send_data       = std::next(it_send_data),
            it_send_serializer = std::next(it_send_serializer); )
       {
-        const MpiCommSerializer & r_send_serializer = *it_send_serializer;
+        const Serializer & r_send_serializer = *it_send_serializer;
         const r_send_data & = *it_send_data;
 
         //profile data and add sender mark
@@ -91,7 +91,7 @@ class MpiCommunicator
       MPI_Alltoall( send_size, 1, MPI_INT, recv_size, 1, MPI_INT, mComm );
 
       //write dummy header in recv buffer
-      for( MpiCommSerializer recv_serializer : mRecvSerializers )
+      for( Serializer recv_serializer : mRecvSerializers )
       {
         DataProfile dummy_profile = DataProfile::Default().MakeNotFromSender();
         recv_serializer.WriteBufferHeader( dummy_profile );
@@ -152,7 +152,7 @@ class MpiCommunicator
            it_recv_serializer = std::next(it_recv_serializer); )
       {
         TDataType & r_recv_data = *it_recv_data;
-        MpiCommSerializer & r_recv_serialzer = *it_recv_serializer;
+        Serializer & r_recv_serialzer = *it_recv_serializer;
 
         if( recv_size[i] > 0 )
         {
@@ -188,8 +188,8 @@ class MpiCommunicator
     template<typename TDataType>
     void AllGather( TDataType & r_send_data, std::vector<TDataType> & r_recv_datas )
     {
-      typedef std::vector<MpiCommSerializer>::iterator       SerializerIteratorType;
-      typedef std::vector<MpiCommSerializer>::const_iterator SerializerConstIteratorType;
+      typedef std::vector<Serializer>::iterator       SerializerIteratorType;
+      typedef std::vector<Serializer>::const_iterator SerializerConstIteratorType;
 
       int mpi_rank, mpi_size;
 
@@ -217,7 +217,7 @@ class MpiCommunicator
       MPI_Alltoall( send_size, 1, MPI_INT, recv_size, 1, MPI_INT, mComm );
 
       //write dummy header in recv buffer
-      for( MpiCommSerializer recv_serializer : mRecvSerializers )
+      for( Serializer recv_serializer : mRecvSerializers )
       {
         DataProfile dummy_profile = DataProfile::Default().MakeNotFromSender();
         recv_serializer.WriteBufferHeader( dummy_profile );
@@ -278,7 +278,7 @@ class MpiCommunicator
            it_recv_serializer = std::next(it_recv_serializer); )
       {
         TDataType & r_recv_data = *it_recv_data;
-        MpiCommSerializer & r_recv_serialzer = *it_recv_serializer;
+        Serializer & r_recv_serialzer = *it_recv_serializer;
 
         if( recv_size[i] > 0 )
         {
@@ -350,6 +350,6 @@ class MpiCommunicator
     };
 
     MPI_Comm mComm;
-    std::vector<MpiCommSerializer> mSendSerializers;
-    std::vector<MpiCommSerializer> mRecvSerializers;
+    std::vector<Serializer> mSendSerializers;
+    std::vector<Serializer> mRecvSerializers;
 };

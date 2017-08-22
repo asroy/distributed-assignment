@@ -1,6 +1,5 @@
 #include<mpi.h>
 #include<iostream>
-#include<sys/types.h>
 #include<unistd.h>
 #include<vector>
 #include"Serializer.h"
@@ -19,8 +18,7 @@ int main( int argc, char** argv )
   std::cout << "rank " << rank << " getPID "<< ::getpid() << std::endl;
 
   int dump;
-  std::cin >> dump;
-
+  // std::cin >> dump;
 
   if( rank == 0 )
   {
@@ -29,15 +27,15 @@ int main( int argc, char** argv )
 
     std::vector<A> send_vector;
 
-    for( int i = 0; i < 10; i++ )
+    for( int i = 0; i < 100000; i++ )
     {
       send_vector.push_back(a0);
       send_vector.push_back(a1);
     }
 
     //print
-    DataPrinter data_printer;
-    data_printer.Print(send_vector);
+    // DataPrinter data_printer;
+    // data_printer.Print(send_vector);
 
     Serializer send_serial;
 
@@ -97,8 +95,8 @@ int main( int argc, char** argv )
     std::cout << " recv_vector size " <<recv_vector.size() << std::endl;
 
     //print
-    DataPrinter data_printer;
-    data_printer.Print(recv_vector);
+    // DataPrinter data_printer;
+    // data_printer.Print(recv_vector);
 
     std::cin >> dump;
   }

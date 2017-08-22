@@ -8,9 +8,6 @@
 #define SERIALIZER_SAVE_BASIC_TYPE(TDataType)                    \
 void Save( const TDataType & r_data )                            \
 {                                                                \
-  std::cout<<__func__<<"save basic type "<<std::endl;            \
-  type_name(r_data);                                             \
-                                                                 \
   std::size_t size = sizeof(r_data);                             \
                                                                  \
   if( mBufferSavePos + size > mBufferSize )                      \
@@ -21,17 +18,12 @@ void Save( const TDataType & r_data )                            \
   *p = r_data;                                                   \
                                                                  \
   mBufferSavePos += size;                                        \
-                                                                 \
-  std::cout<<"value: "<<r_data<<std::endl;                       \
 }
 
 //load basic datatype
 #define SERIALIZER_LOAD_BASIC_TYPE(TDataType)                                                    \
 void Load( TDataType & r_data )                                                                  \
 {                                                                                                \
-  std::cout<<__func__<<"load basic type "<<std::endl;                                            \
-  type_name(r_data);                                                                             \
-                                                                                                 \
   std::size_t size = sizeof(r_data);                                                             \
                                                                                                  \
   if( mBufferLoadPos + size > mBufferSize )                                                      \
@@ -103,8 +95,6 @@ class Serializer
         mpBuffer = p;
         mBufferSize = buffer_size;
       }
-      else
-        std::cout << __func__ << "Buffer size is bigger than requested size. Do nothing" << std::endl;
     }
 
     void CopyBufferContent( const Serializer & r_source_serializer )
@@ -193,9 +183,6 @@ class Serializer
     {
       typedef typename std::vector<TDataType>::size_type SizeType;
 
-      std::cout<<__func__<<"save vector "<<std::endl;
-      type_name(r_vector);
-
       SizeType vector_size = r_vector.size();
 
       Save(vector_size);
@@ -209,9 +196,6 @@ class Serializer
     void Load( std::vector<TDataType> & r_vector )
     {
       typedef typename std::vector<TDataType>::size_type SizeType;
-
-      std::cout<<__func__<<"load vector "<<std::endl;
-      type_name(r_vector);
 
       r_vector.clear();
 
@@ -229,9 +213,6 @@ class Serializer
     template<typename TDataType>
     void Save( const TDataType & r_data )
     {
-      std::cout<<__func__<<"save user data "<<std::endl;
-      type_name(r_data);
-
       r_data.Save(*this);
     }
 
@@ -239,9 +220,6 @@ class Serializer
     template<typename TDataType>
     void Load( TDataType & r_data )
     {
-      std::cout<<__func__<<"load user data "<<std::endl;
-      type_name(r_data);
-
       r_data.Load(*this);
     }
 
