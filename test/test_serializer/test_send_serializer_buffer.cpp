@@ -29,9 +29,7 @@ int main( int argc, char** argv )
     std::cout << "rank " << rank << " a0: " << a0.i << a0.x << a0.y[0] << a0.y[1] << a0.b.i << a0.b.z << a0.b.c << std::endl;
     std::cout << "rank " << rank << " a1: " << a1.i << a1.x << a0.y[0] << a1.y[1] << a1.b.i << a1.b.z << a1.b.c << std::endl;
 
-    std::vector<A> send_vector;
-
-    send_vector.push_back(a0);
+    std::vector<A> send_vector(10000,a0);
     send_vector.push_back(a1);
 
     Serializer send_serial;
@@ -68,6 +66,9 @@ int main( int argc, char** argv )
     std::cout << rank << ": recv_size " << recv_size << std::endl;
 
     Serializer recv_serial;
+
+    //increase buffer size
+    recv_serial.IncreaseBufferSize(recv_size);
 
     // buffer header
     recv_serial.ReserveSpaceForBufferHeader(DataProfile::Default());
