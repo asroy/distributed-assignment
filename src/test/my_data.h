@@ -7,7 +7,7 @@ class B
 
     void Save( Serializer & r_serializer ) const
     {
-      r_serializer.Save<int,int>(i);
+      r_serializer.Save(i);
       r_serializer.Save(z);
       r_serializer.Save(c);
     }
@@ -19,7 +19,13 @@ class B
       r_serializer.Load(c);
     }
 
+    DataProfile Profile( DataProfile & r_data_profile )
+    {
+      return r_data_profile.MakeNonTrivial();
+    }
+
   friend class Serializer;
+  friend class DataProfile;
 };
 
 class A
@@ -48,6 +54,12 @@ class A
       r_serializer.Load(b);
     }
 
+    DataProfile Profile( DataProfile & r_data_profile )
+    {
+      return r_data_profile.MakeNonTrivial();
+    }
+
   friend class Serializer;
+  friend class DataProfile;
 };
 

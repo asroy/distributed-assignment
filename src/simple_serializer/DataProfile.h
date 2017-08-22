@@ -1,14 +1,20 @@
 #include<vector>
 
+//profile basic type
+#define DATAPROFILE_PROFILE(TDATATYPE)                                      \
+DataProfile Profile( const TDATATYPE & r_data ) const                       \
+{                                                                           \
+    std::cout<<"Profile basic type"<<std::endl;                             \
+    return DataProfile::Default().MakeNonTrivial();                         \
+}
+
+
 class DataProfile
 {
   public:
     DataProfile()
       : mIsTrivial{true},
-        mIsFromSender{false},
-        mCountInt{0},
-        mCountDouble{0},
-        mCountChar{0}
+        mIsFromSender{false}
     {}
 
     ~DataProfile()
@@ -19,31 +25,28 @@ class DataProfile
       DataProfile profile;
       profile.mIsTrivial = false;
       profile.mIsFromSender = false;
-      profile.mCountInt = 0;
-      profile.mCountDouble = 0;
-      profile.mCountChar = 0;
       return profile;
     }
 
-    DataProfile & MakeTrivial()
+    DataProfile MakeTrivial()
     {
       mIsTrivial = true;
       return *this;
     }
 
-    DataProfile & MakeNonTrivial()
+    DataProfile MakeNonTrivial()
     {
       mIsTrivial = false;
       return *this;
     }
 
-    DataProfile & MakeFromSender()
+    DataProfile MakeFromSender()
     {
       mIsFromSender = true;
       return *this;
     }
 
-    DataProfile & MakeNotFromSender()
+    DataProfile MakeNotFromSender()
     {
       mIsFromSender = false;
       return *this;
@@ -56,8 +59,14 @@ class DataProfile
     { return mIsTrivial; }
 
     //profile basic data type
-    template<typename TDataType,typename TDummyType>
-    DataProfile Profile( const TDataType & r_data ) const;
+    DATAPROFILE_PROFILE(bool)
+    DATAPROFILE_PROFILE(char)
+    DATAPROFILE_PROFILE(int)
+    DATAPROFILE_PROFILE(long)
+    DATAPROFILE_PROFILE(unsigned int)
+    DATAPROFILE_PROFILE(unsigned long)
+    DATAPROFILE_PROFILE(float)
+    DATAPROFILE_PROFILE(double)
 
     //profile std::vector
     template<typename TDataType>
@@ -65,14 +74,6 @@ class DataProfile
     {
       std::cout<<"Profile vector"<<std::endl;
       DataProfile profile = DataProfile::Default();
-
-      for( const TDataType data : r_vector )
-      {
-        DataProfile sub_profile = Profile(data);
-        profile.mCountInt    += sub_profile.mCountInt;
-        profile.mCountDouble += sub_profile.mCountDouble;
-        profile.mCountChar   += sub_profile.mCountChar;
-      }
 
       if( r_vector.size() == 0 )
         profile.MakeTrivial();
@@ -93,45 +94,5 @@ class DataProfile
   private:
     bool mIsTrivial;
     bool mIsFromSender;
-    int mCountInt;
-    int mCountDouble;
-    int mCountChar;
 };
 
-
-template<typename TDataType,typename TDummyType>
-DataProfile DataProfile::Profile( const TDataType & r_data ) const
-{ 
-  std::cout<<"Profile basic type default"<<std::endl;
-  return DataProfile::Default().MakeNonTrivial();
-}
-
-template<> 
-DataProfile DataProfile::Profile<int,int>( const int & r_data ) const
-{
-  std::cout<<"Profile int"<<std::endl;
-  DataProfile profile = DataProfile::Default();
-  profile.mIsTrivial = false;
-  profile.mCountInt = 1;
-  return profile;
-}
-
-template<> 
-DataProfile DataProfile::Profile<double,int>( const double & r_data ) const
-{
-  std::cout<<"Profile double"<<std::endl;
-  DataProfile profile = DataProfile::Default();
-  profile.mIsTrivial = false;
-  profile.mCountDouble = 1;
-  return profile;
-}
-
-template<> 
-DataProfile DataProfile::Profile<char,int>( const char & r_data ) const
-{
-  std::cout<<"Profile char"<<std::endl;
-  DataProfile profile = DataProfile::Default();
-  profile.mIsTrivial = false;
-  profile.mCountChar = 1;
-  return profile;
-}

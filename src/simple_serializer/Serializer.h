@@ -2,6 +2,42 @@
 #include<cstring>
 #include<iostream>
 
+
+//save basic datatype
+#define SERIALIZER_SAVE_BASIC_TYPE(TDataType)                    \
+void Save( const TDataType & r_data )                            \
+{                                                                \
+  std::size_t size = sizeof(r_data);                             \
+                                                                 \
+  if( mBufferSavePos + size > mBufferSize )                      \
+    IncreaseBufferSize(1.25*(mBufferSavePos+ size));             \
+                                                                 \
+  TDataType* p = (TDataType*) (mpBuffer + mBufferSavePos);       \
+                                                                 \
+  *p = r_data;                                                   \
+                                                                 \
+  mBufferSavePos += size;                                        \
+}
+
+//load basic datatype
+#define SERIALIZER_LOAD_BASIC_TYPE(TDataType)                                                    \
+void Load( TDataType & r_data )                                                                  \
+{                                                                                                \
+  std::size_t size = sizeof(r_data);                                                             \
+                                                                                                 \
+  if( mBufferLoadPos + size > mBufferSize )                                                      \
+  {                                                                                              \
+    std::cout << __func__ << "wrong: load position larger than buffer size! exit" << std::endl;  \
+    exit(EXIT_FAILURE);                                                                          \
+  }                                                                                              \
+                                                                                                 \
+  TDataType* p = (TDataType*) (mpBuffer + mBufferLoadPos);                                       \
+                                                                                                 \
+  r_data = *p;                                                                                   \
+                                                                                                 \
+  mBufferLoadPos += size;                                                                        \
+}
+
 class Serializer
 {
   public:
@@ -78,10 +114,11 @@ class Serializer
     { return mpBuffer; }
 
     template<typename TBufferHeaderType>
-    void ReserveSpaceForBufferHeader()
+    void ReserveSpaceForBufferHeader(const TBufferHeaderType buffer_header)
     {
-      TBufferHeaderType dummy;
-      mBufferHead = sizeof(dummy);
+      std::size_t buffer_header_size = sizeof(buffer_header);
+      IncreaseBufferSize(buffer_header_size);
+      mBufferHead = buffer_header_size;
     }
 
     template<typename TBufferHeaderType>
@@ -109,7 +146,7 @@ class Serializer
     int FreshSave( const TDataType & r_data )
     {
       ResetBufferSavePos();
-      Save<TDataType> (r_data);
+      Save(r_data);
       return BufferSavePos();
     }
 
@@ -117,43 +154,28 @@ class Serializer
     void FreshLoad( TDataType & r_data )
     {
       ResetBufferLoadPos();
-      Load<TDataType> (r_data);
+      Load(r_data);
     }
 
-    //save basic datatype
-    template<typename TDataType, typename TDummyType>
-    void Save( const TDataType & r_data )
-    {
-      std::size_t size = sizeof(r_data);
+    //save basic data type
+    SERIALIZER_SAVE_BASIC_TYPE(bool)
+    SERIALIZER_SAVE_BASIC_TYPE(char)
+    SERIALIZER_SAVE_BASIC_TYPE(int)
+    SERIALIZER_SAVE_BASIC_TYPE(long)
+    SERIALIZER_SAVE_BASIC_TYPE(unsigned int)
+    SERIALIZER_SAVE_BASIC_TYPE(unsigned long)
+    SERIALIZER_SAVE_BASIC_TYPE(float)
+    SERIALIZER_SAVE_BASIC_TYPE(double)
 
-      if( mBufferSavePos + size > mBufferSize )
-        IncreaseBufferSize(1.25*(mBufferSavePos+ size));
-
-      TDataType* p = (TDataType*) (mpBuffer + mBufferSavePos);
-
-      *p = r_data;
-
-      mBufferSavePos += size;
-    }
-
-    //load basic datatype
-    template<typename TDataType, typename TDummyType>
-    void Load( TDataType & r_data )
-    {
-      std::size_t size = sizeof(r_data);
-
-      if( mBufferLoadPos + size > mBufferSize )
-      {
-        std::cout << __func__ << "wrong: load position larger than buffer size! exit" << std::endl;
-        exit(EXIT_FAILURE);
-      }
-
-      TDataType* p = (TDataType*) (mpBuffer + mBufferLoadPos);
-
-      r_data = *p;
-
-      mBufferLoadPos += size;
-    }
+    //load basic data type
+    SERIALIZER_LOAD_BASIC_TYPE(bool)
+    SERIALIZER_LOAD_BASIC_TYPE(char)
+    SERIALIZER_LOAD_BASIC_TYPE(int)
+    SERIALIZER_LOAD_BASIC_TYPE(long)
+    SERIALIZER_LOAD_BASIC_TYPE(unsigned int)
+    SERIALIZER_LOAD_BASIC_TYPE(unsigned long)
+    SERIALIZER_LOAD_BASIC_TYPE(float)
+    SERIALIZER_LOAD_BASIC_TYPE(double)
 
     //save std::vector
     template<typename TDataType>
@@ -218,20 +240,3 @@ class Serializer
     std::size_t mBufferSavePos;
     std::size_t mBufferLoadPos;
 };
-
-
-// template void Serializer::Save<bool,int> ( const bool &);
-// template void Serializer::Save<char, int> ( const char &);
-// template void Serializer::Save<int, int> ( const int &);
-// template void Serializer::Save<long, int> ( const long &);
-// template void Serializer::Save<unsigned int, int> ( const unsigned int  &);
-// template void Serializer::Save<unsigned long, int> ( const unsigned long &);
-// template void Serializer::Save<double, int> ( const double &);
-
-// template void Serializer::Load<bool,int> (bool &);
-// template void Serializer::Load<char, int> (char &);
-// template void Serializer::Load<int, int> (int &);
-// template void Serializer::Load<long, int> (long &);
-// template void Serializer::Load<unsigned int, int> (unsigned int  &);
-// template void Serializer::Load<unsigned long, int> (unsigned long &);
-// template void Serializer::Load<double, int> (double &);

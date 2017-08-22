@@ -69,7 +69,7 @@ int main( int argc, char** argv )
     Serializer send_serial;
 
     // buffer header
-    send_serial.ReserveSpaceForBufferHeader<DataProfile>();
+    send_serial.ReserveSpaceForBufferHeader(DataProfile::Default());
 
     const std::vector<A> & r_send_vector = send_vector;
     DataProfile send_data_profile = DataProfile::Default().Profile(r_send_vector).MakeFromSender();
@@ -99,7 +99,7 @@ int main( int argc, char** argv )
     Serializer recv_serial;
 
     // buffer header
-    recv_serial.ReserveSpaceForBufferHeader<DataProfile>();
+    recv_serial.ReserveSpaceForBufferHeader(DataProfile::Default());
     DataProfile recv_data_profile = DataProfile::Default().MakeNotFromSender();
     recv_serial.WriteBufferHeader(recv_data_profile);
     
@@ -120,4 +120,9 @@ int main( int argc, char** argv )
   }
 
   MPI_Finalize();
+
+
+  int dump;
+  std::cin >> dump;
+
 }
