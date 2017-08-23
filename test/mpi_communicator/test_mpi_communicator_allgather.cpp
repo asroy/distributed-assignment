@@ -49,7 +49,7 @@ int main( int argc, char** argv )
   {
     std::cout<<"recv vector sizes"<<recv_data_containers[i].size()<<std::endl;
     DataPrinter data_printer;
-    // data_printer.Print(recv_data_containers[i]);
+    data_printer.Print(recv_data_containers[i]);
   }
 
 
