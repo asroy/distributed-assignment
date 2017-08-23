@@ -24,36 +24,36 @@ int main( int argc, char** argv )
   // std::cin >> dump;
 
 
-  A a0 = {1,1.1,2.1,3.1,{4,4.1,'b'}};
+  //build complete communicator
+  MpiCommunicator communicator;
+  communicator.BuildCompleteCommunication();
 
   //send data containers
-  std::vector<DataContainerType> send_data_containers;
-  send_data_containers.clear();
+  A a0 = {1,1.1,2.1,3.1,{4,4.1,'b'}};
 
-  for( int i = 0; i < mpi_size; i++ )
-  {
-    DataContainerType & r_send_data_container = send_data_containers[i];
-    r_send_data_container.clear();
-    for( int j = 1; j < mpi_size; j++ )
-      r_send_data_container.push_back(a0);
-  }
+  DataContainerType send_data_container;
+  send_data_container.clear();
+
+  for( int j = 0; j < 10000; j++ )
+    send_data_container.push_back(a0);
 
   //recv data containers
   std::vector<DataContainerType> recv_data_containers;
-  recv_data_containers.clear();
+  recv_data_containers.resize(mpi_size);
 
-  //send recv
-  MpiCommunicator communicator;
-  communicator.BuildCompleteCommunication();
-  communicator.AllSendAllRecv( send_data_containers, recv_data_containers, 0 );
+  //all gather
+  communicator.AllGather( send_data_container, recv_data_containers, 0 );
 
   //print
   for( int i = 0; i < mpi_size; i++ )
   {
+    std::cout<<"recv vector sizes"<<recv_data_containers[i].size()<<std::endl;
     DataPrinter data_printer;
-    data_printer.Print(recv_data_containers[i]);
+    // data_printer.Print(recv_data_containers[i]);
   }
 
+
+  std::cin >> dump;
 
   MPI_Finalize();
 }

@@ -48,13 +48,11 @@ class MpiCommunicator
   public:
     typedef MpiLocation LocationType;
     typedef MpiLocation::LessThan LocationLessThanType;
-    typedef std::vector<MpiLocation> LocationContainerType;
+    typedef std::vector<LocationType> LocationContainerType;
 
     MpiCommunicator()
       : mComm{MPI_COMM_WORLD}
-    {
-      std::cout<< __func__ << "calling default constructor" << std::endl;
-    }
+    {}
 
     MpiCommunicator(const MPI_Comm comm)
       : mComm{comm}
@@ -101,7 +99,6 @@ class MpiCommunicator
       MPI_Comm_size(mComm, &mpi_size);
 
       int* send_sizes = new int[mpi_size];
-      int* recv_sizes = new int[mpi_size];
 
       //profile and save send_data
       {
@@ -119,12 +116,12 @@ class MpiCommunicator
             it_send_data       = std::next(it_send_data),
             it_send_serializer = std::next(it_send_serializer) )
         {
-          const Serializer & r_send_serializer = *it_send_serializer;
+          Serializer & r_send_serializer = *it_send_serializer;
           const TDataType & r_send_data = *it_send_data;
 
           //profile data and add sender mark
+          r_send_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
           DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).MakeFromSender();
-
           r_send_serializer.WriteBufferHeader(send_data_profile);
 
           send_sizes[i] = r_send_serializer.FreshSave(r_send_data);
@@ -135,13 +132,15 @@ class MpiCommunicator
       }
 
       //receive message size
+      int* recv_sizes = new int[mpi_size];
+
       MPI_Alltoall( send_sizes, 1, MPI_INT, recv_sizes, 1, MPI_INT, mComm );
 
       //write dummy header in recv buffer
-      for( Serializer & recv_serializer : mRecvSerializers )
+      for( Serializer & r_recv_serializer : mRecvSerializers )
       {
-        DataProfile dummy_profile = DataProfile::Default().MakeNotFromSender();
-        recv_serializer.WriteBufferHeader( dummy_profile );
+        r_recv_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+        r_recv_serializer.WriteBufferHeader( DataProfile::Default().MakeNotFromSender().MakeTrivial() );
       }
 
       // resize recv serializer
@@ -227,7 +226,7 @@ class MpiCommunicator
               exit(EXIT_FAILURE);
             }
 
-            if( ! recv_data_profile.IsTrivial() )
+            if( recv_data_profile.IsTrivial() )
             {
               std::cout << __func__ << "recv_sizes > 0, but buffer header is marked trivial! exit" << std::endl;
               exit(EXIT_FAILURE);
@@ -252,7 +251,6 @@ class MpiCommunicator
     void AllGather( TDataType & r_send_data, std::vector<TDataType> & r_recv_datas, int mpi_tag )
     {
       typedef typename std::vector<TDataType>::iterator       DataIteratorType;
-      typedef typename std::vector<TDataType>::const_iterator DataConstIteratorType;
       typedef typename std::vector<Serializer>::iterator       SerializerIteratorType;
       typedef typename std::vector<Serializer>::const_iterator SerializerConstIteratorType;
 
@@ -262,9 +260,9 @@ class MpiCommunicator
       MPI_Comm_size(mComm, &mpi_size);
 
       int* send_sizes = new int[mpi_size];
-      int* recv_sizes = new int[mpi_size];
 
       //write send buffer header
+      mSendSerializers[0].ReserveSpaceForBufferHeader(DataProfile::Default());
       DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).MakeFromSender();
       mSendSerializers[0].WriteBufferHeader(send_data_profile);
 
@@ -281,13 +279,15 @@ class MpiCommunicator
       }
 
       //receive message size
+      int* recv_sizes = new int[mpi_size];
+
       MPI_Alltoall( send_sizes, 1, MPI_INT, recv_sizes, 1, MPI_INT, mComm );
 
       //write dummy header in recv buffer
-      for( Serializer & recv_serializer : mRecvSerializers )
+      for( Serializer & r_recv_serializer : mRecvSerializers )
       {
-        DataProfile dummy_profile = DataProfile::Default().MakeNotFromSender();
-        recv_serializer.WriteBufferHeader( dummy_profile );
+        r_recv_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+        r_recv_serializer.WriteBufferHeader( DataProfile::Default().MakeTrivial().MakeNotFromSender() );
       }
 
       // resize recv serializer
@@ -373,7 +373,7 @@ class MpiCommunicator
               exit(EXIT_FAILURE);
             }
 
-            if( ! recv_data_profile.IsTrivial() )
+            if( recv_data_profile.IsTrivial() )
             {
               std::cout << __func__ << "recv_sizes > 0, but buffer header is marked trivial! exit" << std::endl;
               exit(EXIT_FAILURE);
