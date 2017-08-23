@@ -1,8 +1,9 @@
+#pragma once
+
 #include<vector>
 #include<cstring>
 #include<iostream>
 #include"TypeId.h"
-
 
 //save basic datatype
 #define SERIALIZER_SAVE_BASIC_TYPE(TDataType)                    \

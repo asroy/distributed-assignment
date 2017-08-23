@@ -1,7 +1,9 @@
+#pragma once
+
 #include<vector>
 
 //profile basic type
-#define DATAPROFILE_PROFILE_BASIC_TYPE(TDATATYPE)                                      \
+#define DATAPROFILE_PROFILE_BASIC_TYPE(TDATATYPE)                           \
 DataProfile Profile( const TDATATYPE & r_data ) const                       \
 {                                                                           \
     std::cout<<"Profile basic type"<<std::endl;                             \
@@ -23,7 +25,7 @@ class DataProfile
     static DataProfile Default()
     {
       DataProfile profile;
-      profile.mIsTrivial = false;
+      profile.mIsTrivial = true;
       profile.mIsFromSender = false;
       return profile;
     }

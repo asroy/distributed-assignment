@@ -1,15 +1,54 @@
-#include<cstdlib>
+#pragma once
+
+#include<iostream>
+#include<vector>
 #include<mpi.h>
 #include"Serializer.h"
 #include"DataProfile.h"
+
+class MpiLocation
+{
+  public:
+    MpiLocation( MPI_Comm comm, int rank, int size )
+      : mComm{comm},
+        mRank{rank},
+        mSize{size}
+    {}
+
+    MPI_Comm Comm() const
+    { return mComm; }
+
+    int Rank() const
+    { return mRank; }
+
+    int Size() const
+    { return mSize; }
+
+    struct LessThan
+    {
+      bool operator() ( const MpiLocation & a, const MpiLocation & b ) const
+      {
+        if( a.mComm != b.mComm )
+        {
+          std::cout << __func__ << "two MpiLocation not in the same not in the same MPI communicator! exit" << std::endl;
+          exit(EXIT_FAILURE);
+        }
+        return ( a.mRank < b.mRank );
+      }
+    };
+
+  private:
+    MPI_Comm mComm;
+    int mRank;
+    int mSize;
+};
 
 class MpiCommunicator
 {
   public:
     typedef MpiLocation LocationType;
     typedef MpiLocation::LessThan LocationLessThanType;
-    typedef std::vector<MpiLocation> LocationContainerType;
-    typedef Serializer<DataProfile> Serializer;
+    typedef std::vector<LocationType> LocationContainerType;
 
     MpiCommunicator()
       : mComm{MPI_COMM_WORLD}
@@ -22,10 +61,10 @@ class MpiCommunicator
     ~MpiCommunicator()
     {}
 
-    BuildCompleteCommunication()
+    void BuildCompleteCommunication()
     {
-      MPI_Comm_Rank(mComm, &rank);
-      MPI_Comm_Size(mComm, &size);
+      int size;
+      MPI_Comm_size(mComm, &size);
 
       mSendSerializers.clear();
       mRecvSerializers.clear();
@@ -38,8 +77,8 @@ class MpiCommunicator
     {
       int rank, size;
 
-      MPI_Comm_Rank(mComm, &rank);
-      MPI_Comm_Size(mComm, &size);
+      MPI_Comm_rank(mComm, &rank);
+      MPI_Comm_size(mComm, &size);
 
       LocationType mpi_location( mComm, rank, size );
 
@@ -47,308 +86,316 @@ class MpiCommunicator
     }
 
     template<typename TDataType>
-    void AlltoAll( std::vector<TDataType> & r_send_datas, std::vector<TDataType> & r_recv_datas, int mpi_tag )
+    void AllSendAllRecv( std::vector<TDataType> & r_send_datas, std::vector<TDataType> & r_recv_datas, int mpi_tag )
     {
-      typedef std::vector<TDataType>::iterator       DataIteratorType;
-      typedef std::vector<TDataType>::const_iterator DataConstIteratorType;
-      typedef std::vector<Serializer>::iterator       SerializerIteratorType;
-      typedef std::vector<Serializer>::const_iterator SerializerConstIteratorType;
+      typedef typename std::vector<TDataType>::iterator       DataIteratorType;
+      typedef typename std::vector<TDataType>::const_iterator DataConstIteratorType;
+      typedef typename std::vector<Serializer>::iterator       SerializerIteratorType;
+      typedef typename std::vector<Serializer>::const_iterator SerializerConstIteratorType;
 
       int mpi_rank, mpi_size;
 
-      MPI_Comm_Rank(MPI_COMM_WORLD, &mpi_rank);
-      MPI_Comm_Size(MPI_COMM_WORLD, &mpi_size);
+      MPI_Comm_rank(mComm, &mpi_rank);
+      MPI_Comm_size(mComm, &mpi_size);
 
-      int* send_size = new int[mpi_size];
-      int* recv_size = new int[mpi_size];
+      int* send_sizes = new int[mpi_size];
 
       //profile and save send_data
-      for( int i = 0,
-           DataConstIterator      it_send_data       = r_send_datas.begin(),
-           SerializerIteratorType it_send_serializer = mSendSerializers.begin();
-           i < mpi_size,
-           it_send_data       != r_send_datas.end(),
-           it_send_serializer != mSendSerializers.end();
-           i++,
-           it_send_data       = std::next(it_send_data),
-           it_send_serializer = std::next(it_send_serializer); )
       {
-        const Serializer & r_send_serializer = *it_send_serializer;
-        const r_send_data & = *it_send_data;
+        int i;
+        DataConstIteratorType  it_send_data;
+        SerializerIteratorType it_send_serializer;
 
-        //profile data and add sender mark
-        DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).MakeFromSender();
+        for(i = 0,
+            it_send_data       = r_send_datas.begin(),
+            it_send_serializer = mSendSerializers.begin();
+            i < mpi_size ||
+            it_send_data       != r_send_datas.end() ||
+            it_send_serializer != mSendSerializers.end();
+            i++,
+            it_send_data       = std::next(it_send_data),
+            it_send_serializer = std::next(it_send_serializer) )
+        {
+          Serializer & r_send_serializer = *it_send_serializer;
+          const TDataType & r_send_data = *it_send_data;
 
-        r_send_serializer.WriteBufferHeader(send_data_profile);
+          //profile data and add sender mark
+          r_send_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+          DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).MakeFromSender();
+          r_send_serializer.WriteBufferHeader(send_data_profile);
 
-        send_size[i] = r_send_serializer.FreshSave(r_send_data);
+          send_sizes[i] = r_send_serializer.FreshSave(r_send_data);
 
-        if ( send_data_profile.IsTrivial() )
-          send_size[i] = 0;
+          if ( send_data_profile.IsTrivial() )
+            send_sizes[i] = 0;
+        }
       }
 
       //receive message size
-      MPI_Alltoall( send_size, 1, MPI_INT, recv_size, 1, MPI_INT, mComm );
+      int* recv_sizes = new int[mpi_size];
+
+      MPI_Alltoall( send_sizes, 1, MPI_INT, recv_sizes, 1, MPI_INT, mComm );
 
       //write dummy header in recv buffer
-      for( Serializer recv_serializer : mRecvSerializers )
+      for( Serializer & r_recv_serializer : mRecvSerializers )
       {
-        DataProfile dummy_profile = DataProfile::Default().MakeNotFromSender();
-        recv_serializer.WriteBufferHeader( dummy_profile );
+        r_recv_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+        r_recv_serializer.WriteBufferHeader( DataProfile::Default().MakeNotFromSender().MakeTrivial() );
       }
 
       // resize recv serializer
       for( int i = 0; i < mpi_size; i++ )
       {
-        if( recv_size[i] > 0 )
-          mRecvSerializer[i].IncreaseBufferSize(recv_size[i]);
+        if( recv_sizes[i] > 0 )
+          mRecvSerializers[i].IncreaseBufferSize(recv_sizes[i]);
       }
 
       int num_event = 0;
 
-      for ( int = i; i < mpi_size; i++ )
+      for ( int i = 0; i < mpi_size; i++ )
       {
-        if( send_size[i] > 0 ) num_event++;
-        if( recv_size[i] > 0 ) num_event++;
+        if( send_sizes[i] > 0 ) num_event++;
+        if( recv_sizes[i] > 0 ) num_event++;
       }
 
       MPI_Request * reqs = new MPI_Request [num_event];
       MPI_Status * stats = new MPI_Status  [num_event];
 
       // send receive buffer
-      for( int k = 0,
-           int i = 0,
-           SerializerConstIteratorType it_send_serializer = mSendSerializers.begin(),
-           SerializerIteratorType      it_recv_serializer = mRecvSerializers.begin();
-           i < mpi_size,
-           it_send_serializer != mSendSerializer.end(),
-           it_recv_serializer != mRecvSerializer.end();
-           i++,
-           it_send_serializer = std::next(it_send_serializer),
-           it_recv_serializer = std::next(it_recv_serializer) )
       {
-        if( send_size[i] > 0 )
-        {
-          MPI_Isend( (*it_send_serializer).BufferPointer(), send_size[i], MPI_CHAR, i, mpi_tag, mComm, reqs[k] );
-          k++;
-        }
+        int k, i;
+        SerializerConstIteratorType it_send_serializer;
+        SerializerIteratorType      it_recv_serializer;
 
-        if( recv_size[i] > 0 )
+        for(k = 0,
+            i = 0,
+            it_send_serializer = mSendSerializers.begin(),
+            it_recv_serializer = mRecvSerializers.begin();
+            i < mpi_size ||
+            it_send_serializer != mSendSerializers.end() ||
+            it_recv_serializer != mRecvSerializers.end();
+            i++,
+            it_send_serializer = std::next(it_send_serializer),
+            it_recv_serializer = std::next(it_recv_serializer) )
         {
-          MPI_Irecv( (*it_recv_serializer).BufferPointer(), recv_size[i], MPI_CHAR, i, mpi_tag, mComm, reqs[k] );
-          k++;
+          if( send_sizes[i] > 0 )
+          {
+            MPI_Isend( (*it_send_serializer).BufferPointer(), send_sizes[i], MPI_CHAR, i, mpi_tag, mComm, &(reqs[k]) );
+            k++;
+          }
+
+          if( recv_sizes[i] > 0 )
+          {
+            MPI_Irecv( (*it_recv_serializer).BufferPointer(), recv_sizes[i], MPI_CHAR, i, mpi_tag, mComm, &(reqs[k]) );
+            k++;
+          }
         }
       }
 
       // wait until all send recv are done
-      MPI_Waitall( num_event, reqs, status );
+      MPI_Waitall( num_event, reqs, stats );
 
       // load data from buffer
-      for( DataIterator           it_recv_data       = r_recv_datas.begin(),
-           SerializerIteratorType it_recv_serializer = mRecvSerializers.begin();
-           it_recv_data       != r_recv_datas.end(),
-           it_recv_serializer != mRecvSerializers.end();
-           it_recv_data       = std::next(it_recv_data),
-           it_recv_serializer = std::next(it_recv_serializer); )
       {
-        TDataType & r_recv_data = *it_recv_data;
-        Serializer & r_recv_serialzer = *it_recv_serializer;
+        int i;
+        DataIteratorType       it_recv_data;
+        SerializerIteratorType it_recv_serializer;
 
-        if( recv_size[i] > 0 )
+        for(i = 0,
+            it_recv_data       = r_recv_datas.begin(),
+            it_recv_serializer = mRecvSerializers.begin();
+            i < mpi_size ||
+            it_recv_data       != r_recv_datas.end() ||
+            it_recv_serializer != mRecvSerializers.end();
+            i++,
+            it_recv_data       = std::next(it_recv_data),
+            it_recv_serializer = std::next(it_recv_serializer) )
         {
-          //check
-          DataProfile recv_data_profile = r_recv_serializer.ReadBufferHeader();
+          TDataType & r_recv_data = *it_recv_data;
+          Serializer & r_recv_serializer = *it_recv_serializer;
 
-          if( ! recv_data_profile.IsFromSender() )
+          if( recv_sizes[i] > 0 )
           {
-            std::cout << __func__ << "recv_size > 0, but buffer header is not marked by sender! exit" << std::endl;
-            exit(EXIT_FAILURE);
-          }
+            //check
+            DataProfile recv_data_profile;
+            r_recv_serializer.ReadBufferHeader(recv_data_profile);
 
-          if( ! recv_data_profile.IsTrivial() )
+            if( ! recv_data_profile.IsFromSender() )
+            {
+              std::cout << __func__ << "recv_sizes > 0, but buffer header is not marked by sender! exit" << std::endl;
+              exit(EXIT_FAILURE);
+            }
+
+            if( recv_data_profile.IsTrivial() )
+            {
+              std::cout << __func__ << "recv_sizes > 0, but buffer header is marked trivial! exit" << std::endl;
+              exit(EXIT_FAILURE);
+            }
+
+            r_recv_serializer.FreshLoad(r_recv_data);
+          }
+          else
           {
-            std::cout << __func__ << "recv_size > 0, but buffer header is marked trivial! exit" << std::endl;
-            exit(EXIT_FAILURE);
+            r_recv_data.clear();
           }
-
-          r_recv_serializer.FreshLoad(r_recv_data);
-        }
-        else
-        {
-          r_recv_data.clear();
         }
       }
 
-      delete [] send_size;
-      delete [] recv_size;
-      delete [] MPI_Request;
-      delete [] MPI_Status;
+      delete [] send_sizes;
+      delete [] recv_sizes;
+      delete [] reqs;
+      delete [] stats;
     }
 
     template<typename TDataType>
-    void AllGather( TDataType & r_send_data, std::vector<TDataType> & r_recv_datas )
+    void AllGather( TDataType & r_send_data, std::vector<TDataType> & r_recv_datas, int mpi_tag )
     {
-      typedef std::vector<Serializer>::iterator       SerializerIteratorType;
-      typedef std::vector<Serializer>::const_iterator SerializerConstIteratorType;
+      typedef typename std::vector<TDataType>::iterator       DataIteratorType;
+      typedef typename std::vector<Serializer>::iterator       SerializerIteratorType;
+      typedef typename std::vector<Serializer>::const_iterator SerializerConstIteratorType;
 
       int mpi_rank, mpi_size;
 
-      MPI_Comm_Rank(mComm, &mpi_rank);
-      MPI_Comm_Size(mComm, &mpi_size);
+      MPI_Comm_rank(mComm, &mpi_rank);
+      MPI_Comm_size(mComm, &mpi_size);
 
-      //send buffer header
+      int* send_sizes = new int[mpi_size];
+
+      //write send buffer header
+      mSendSerializers[0].ReserveSpaceForBufferHeader(DataProfile::Default());
       DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).MakeFromSender();
-
       mSendSerializers[0].WriteBufferHeader(send_data_profile);
 
       // save data to buffer
-      std::size_t send_size = mSendSerializers[0].FreshSave(r_send_data);
+      send_sizes[0] = (int) mSendSerializers[0].FreshSave(r_send_data);
 
       if( send_data_profile.IsTrivial() )
-        send_size[0] = 0;
+        send_sizes[0] = 0;
 
       for( int i = 1; i < mpi_size; i++ )
       {
-        send_size[i] = send_size[0];
+        send_sizes[i] = send_sizes[0];
         mSendSerializers[i].CopyBufferContent(mSendSerializers[0]);
       }
 
       //receive message size
-      MPI_Alltoall( send_size, 1, MPI_INT, recv_size, 1, MPI_INT, mComm );
+      int* recv_sizes = new int[mpi_size];
+
+      MPI_Alltoall( send_sizes, 1, MPI_INT, recv_sizes, 1, MPI_INT, mComm );
 
       //write dummy header in recv buffer
-      for( Serializer recv_serializer : mRecvSerializers )
+      for( Serializer & r_recv_serializer : mRecvSerializers )
       {
-        DataProfile dummy_profile = DataProfile::Default().MakeNotFromSender();
-        recv_serializer.WriteBufferHeader( dummy_profile );
+        r_recv_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+        r_recv_serializer.WriteBufferHeader( DataProfile::Default().MakeTrivial().MakeNotFromSender() );
       }
 
       // resize recv serializer
       for( int i = 0; i < mpi_size; i++ )
       {
-        if( recv_size[i] > 0 )
-          mRecvSerializer[i].IncreaseBufferSize(recv_size[i]);
+        if( recv_sizes[i] > 0 )
+          mRecvSerializers[i].IncreaseBufferSize(recv_sizes[i]);
       }
 
       int num_event = 0;
 
-      for ( int = i; i < mpi_size; i++ )
+      for ( int i = 0; i < mpi_size; i++ )
       {
-        if( send_size[i] > 0 ) num_event++;
-        if( recv_size[i] > 0 ) num_event++;
+        if( send_sizes[i] > 0 ) num_event++;
+        if( recv_sizes[i] > 0 ) num_event++;
       }
 
       MPI_Request * reqs = new MPI_Request [num_event];
       MPI_Status * stats = new MPI_Status  [num_event];
 
       // send receive buffer
-      for( int k = 0,
-           int i = 0,
-           SerializerConstIteratorType it_send_serializer = mSendSerializers.begin(),
-           SerializerIteratorType      it_recv_serializer = mRecvSerializers.begin();
-           i < mpi_size,
-           it_send_serializer != mSendSerializer.end(),
-           it_recv_serializer != mRecvSerializer.end();
-           i++,
-           it_send_serializer = std::next(it_send_serializer),
-           it_recv_serializer = std::next(it_recv_serializer) )
       {
-        if( send_size[i] > 0 )
-        {
-          MPI_Isend( (*it_send_serializer).BufferPointer(), send_size[i], MPI_CHAR, i, mpi_tag, mComm, reqs[k] );
-          k++;
-        }
+        int k, i;
+        SerializerConstIteratorType it_send_serializer;
+        SerializerIteratorType      it_recv_serializer;
 
-        if( recv_size[i] > 0 )
+        for(k = 0,
+            i = 0,
+            it_send_serializer = mSendSerializers.begin(),
+            it_recv_serializer = mRecvSerializers.begin();
+            i < mpi_size ||
+            it_send_serializer != mSendSerializers.end() ||
+            it_recv_serializer != mRecvSerializers.end();
+            i++,
+            it_send_serializer = std::next(it_send_serializer),
+            it_recv_serializer = std::next(it_recv_serializer) )
         {
-          MPI_Irecv( (*it_recv_serializer).BufferPointer(), recv_size[i], MPI_CHAR, i, mpi_tag, mComm, reqs[k] );
-          k++;
+          if( send_sizes[i] > 0 )
+          {
+            MPI_Isend( (*it_send_serializer).BufferPointer(), send_sizes[i], MPI_CHAR, i, mpi_tag, mComm, &(reqs[k]) );
+            k++;
+          }
+
+          if( recv_sizes[i] > 0 )
+          {
+            MPI_Irecv( (*it_recv_serializer).BufferPointer(), recv_sizes[i], MPI_CHAR, i, mpi_tag, mComm, &(reqs[k]) );
+            k++;
+          }
         }
       }
 
       // wait until all send recv are done
-      MPI_Waitall( num_event, reqs, status );
+      MPI_Waitall( num_event, reqs, stats );
 
       // load data from buffer
-      for( DataIterator           it_recv_data       = r_recv_datas.begin(),
-           SerializerIteratorType it_recv_serializer = mRecvSerializers.begin();
-           it_recv_data       != r_recv_datas.end(),
-           it_recv_serializer != mRecvSerializers.end();
-           it_recv_data       = std::next(it_recv_data),
-           it_recv_serializer = std::next(it_recv_serializer); )
       {
-        TDataType & r_recv_data = *it_recv_data;
-        Serializer & r_recv_serialzer = *it_recv_serializer;
+        int i;
+        DataIteratorType it_recv_data;
+        SerializerIteratorType it_recv_serializer;
 
-        if( recv_size[i] > 0 )
+        for(i = 0,
+            it_recv_data       = r_recv_datas.begin(),
+            it_recv_serializer = mRecvSerializers.begin();
+            i < mpi_size ||
+            it_recv_data       != r_recv_datas.end() ||
+            it_recv_serializer != mRecvSerializers.end();
+            i++,
+            it_recv_data       = std::next(it_recv_data),
+            it_recv_serializer = std::next(it_recv_serializer) )
         {
-          //check
-          DataProfile recv_data_profile = r_recv_serializer.ReadBufferHeader();
+          TDataType & r_recv_data = *it_recv_data;
+          Serializer & r_recv_serializer = *it_recv_serializer;
 
-          if( ! recv_data_profile.IsFromSender() )
+          if( recv_sizes[i] > 0 )
           {
-            std::cout << __func__ << "recv_size > 0, but buffer header is not marked by sender! exit" << std::endl;
-            exit(EXIT_FAILURE);
-          }
+            //check
+            DataProfile recv_data_profile;
+            r_recv_serializer.ReadBufferHeader(recv_data_profile);
 
-          if( ! recv_data_profile.IsTrivial() )
+            if( ! recv_data_profile.IsFromSender() )
+            {
+              std::cout << __func__ << "recv_sizes > 0, but buffer header is not marked by sender! exit" << std::endl;
+              exit(EXIT_FAILURE);
+            }
+
+            if( recv_data_profile.IsTrivial() )
+            {
+              std::cout << __func__ << "recv_sizes > 0, but buffer header is marked trivial! exit" << std::endl;
+              exit(EXIT_FAILURE);
+            }
+
+            r_recv_serializer.FreshLoad(r_recv_data);
+          }
+          // clear recv data if there is no send
+          else
           {
-            std::cout << __func__ << "recv_size > 0, but buffer header is marked trivial! exit" << std::endl;
-            exit(EXIT_FAILURE);
+            r_recv_data.clear();
           }
-
-          r_recv_serializer.FreshLoad(r_recv_data);
-        }
-        else
-        {
-          r_recv_data.clear();
         }
       }
 
-      delete [] send_size;
-      delete [] recv_size;
-      delete [] MPI_Request;
-      delete [] MPI_Status;
+      delete [] send_sizes;
+      delete [] recv_sizes;
+      delete [] reqs;
+      delete [] stats;
     }
 
   private:
-    class MpiLocation
-    {
-      public:
-        MpiLocation( MPI_Comm comm, int rank, int size )
-          : mComm{comm},
-            mRank{rank},
-            mSize{size}
-        { }
-
-        struct LessThan
-        {
-          bool operator() ( const MpiLocation & a, const MpiLocation & b ) const
-          {
-            if( a.mComm != b.mComm )
-            {
-              std::cout << __func__ << "two MpiLocation not in the same not in the same MPI communicator! exit" << std::endl;
-              exit(EXIT_FAILURE);
-            }
-            return ( a.mRank < b.mRank );
-          }
-        }
-
-        MPI_Comm Comm() const
-        { return mComm; }
-
-        int Rank() const
-        { return mRank; }
-
-        int Size() const
-        { return mSize; }
-
-      private:
-        MPI_Comm mComm;
-        int mRank;
-        int mSize;
-    };
-
     MPI_Comm mComm;
     std::vector<Serializer> mSendSerializers;
     std::vector<Serializer> mRecvSerializers;
