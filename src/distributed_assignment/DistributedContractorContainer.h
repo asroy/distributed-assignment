@@ -1,3 +1,5 @@
+#include<iostream>
+
 template< TContractorType,
           TContractorKeyType,
           TLocationType >
@@ -5,7 +7,7 @@ class DistributedContractorContainer
 {
   public:
     typedef TContractorType* ContractorPointerType;
-    typedef std::map<TContractorKeyType,ContractorPointerType> ContractorPointerContainerType;
+    typedef std::map<TContractorKeyType, ContractorPointerType> ContractorPointerContainerType;
     typedef std::map<TContractorKeyType, TLocationType> LocationContainerType;
 
     void AddLocalContractor( const TContractorType & contractor )
@@ -21,20 +23,20 @@ class DistributedContractorContainer
 
     ContractorPointerType LocalContractor( TContractorKeyType & key )
     { 
-      ContractorPointerContainerType::iterator it = mLocalContractor.find(key);
+      typename ContractorPointerContainerType::iterator it = mLocalContractor.find(key);
       if( it == mLocalContractor.end() )
         return nullptr;
       else
         return it->second;
     }
 
-    TLocationType & Location( TContractorKeyType & )
+    TLocationType & ContactorLocation( TContractorKeyType & )
     {
       LocationContainerType::iterator it = mGlobalContractorsLocation.find(key);
       if( it == mGlobalContractorsLocation.end() )
       {
         std::cout << __func__ << std::endl;
-        exit();
+        exit(EXIT_FAILURE);
       }
       else
         return it->second;
@@ -42,16 +44,16 @@ class DistributedContractorContainer
 
     template< typename TInputDataType,
               typename TOutputDataType >
-    void operator() ( DistributedAssignmentDataContainer<TContractorKeyType> & keys, 
-                      DistributedAssignmentDataContainer<TInputDataType> & inputs,
-                      DistributedAssignmentDataContainer<TOutputDataType> & outputs)
+    void Execute( DistributedAssignmentDataContainer<TContractorKeyType> & keys, 
+                  DistributedAssignmentDataContainer<TInputDataType> & inputs,
+                  DistributedAssignmentDataContainer<TOutputDataType> & outputs)
     {
       keys.SendAssignorDataToAssigneeData();
       inputs.SendAssignorDatatoAssingeeData();
 
-      typedef std::vector<TContractorKeyType>::iterator KeyIteratorType;
-      typedef std::vector<TInputDataType>    ::iterator InputIteratorType;
-      typedef std::vector<TOutputDataType>   ::iterator OutputIteratorType;
+      typedef typename std::vector<TContractorKeyType>::iterator KeyIteratorType;
+      typedef typename std::vector<TInputDataType>    ::iterator InputIteratorType;
+      typedef typename std::vector<TOutputDataType>   ::iterator OutputIteratorType;
 
       for( KeyIteratorType    it_key    = keys   .AssigneeData().begin(),
            InputIteratorType  it_input  = inputs .AssigneeData().begin(),
