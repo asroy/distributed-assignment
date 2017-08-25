@@ -39,6 +39,15 @@ public:
       mRecvSerializers.resize(size);
     }
 
+    Location Here() const
+    {
+        int mpi_rank, mpi_size;
+        Mpi_Comm_rank(mMpiComm, &mpi_rank);
+        Mpi_Comm_size(mMpiComm, &mpi_size);
+        Location location(mMpiComm, mpi_rank, mpi_size);
+        return location;
+    }
+
     Location GetPeerLocation(const int mpi_rank) const
     {
         int mpi_size;
