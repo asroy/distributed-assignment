@@ -1,7 +1,7 @@
 #pragma once
 #include<iostream>
 #include"Contractor.h"
-#include"DistributedContractorContainer.h"
+#include"DistributedContractorManager.h"
 #include"AssignmentData.h"
 
 namespace DistributedAssignment{
@@ -13,13 +13,13 @@ template<typename TAssignorType,
          typename TCommunicatorType,
          typename TInputDataType,
          typename TOutputDataType>
-class AssignmentManager
+class DistributedAssignmentManager
 {
 public:
     typedef typename TCommunicatorType::Location Location;
 
     template<typename TContractorType>
-    using ContractorContainerType = DistributedContractorContainer<TContractorType,TContractorKeyType,TLocationType>;
+    using ContractorContainerType = DistributedContractorManager<TContractorType,TContractorKeyType,TLocationType>;
 
     template<typename TDataType>
     using AssignmentDataType = AssignmentData<TContractorKeyType,TAssignmentKeyType,TDataType>;
@@ -28,24 +28,24 @@ public:
     using AssignmentDataVectorType = std::vector<AssignmentDataType<TDataType>>;
 
     template<typename TKeyType, typename TDataType>
-    using AssignmentDataVectorMapType = std::map<TKeyType, AssignmentDataVectorType<TDataType>>;
+    using AssignmentDataVectorMapType = std::map<TKeyType, AssignmentDataVectorType<TDataType>, TKeyType::LessThan>;
 
     typedef AssignmentDataVectorType<TInputDataType>  WorkUnitInputDataVector;
     typedef AssignmentDataVectorType<TOutputDataType> WorkUnitOutputDataVector;
 
-    AssignmentManager()
+    DistributedAssignmentManager()
     :   mpCommunicator{nullptr},
         mpAssignors{nullptr},
         mpAssignees{nullptr}
     {}
 
-    AssignmentManager( TCommunicatorType & r_communicator, AssignorContainer & r_assignors, AssigneeContainer & r_assignees  )
+    DistributedAssignmentManager( TCommunicatorType & r_communicator, AssignorContainer & r_assignors, AssigneeContainer & r_assignees  )
     :   mpCommunicator{& r_communicator},
         mpAssignors{& r_assignors},
         mpAssignees{& r_assignees}
     {}
 
-    ~AssignmentManager()
+    ~DistributedAssignmentManager()
     {
         mpCommunicator = nullptr;
         mpAssignors = nullptr;
@@ -89,7 +89,7 @@ public:
     {
         typedef AssignmentDataType<TInputDataType> Data;
         typedef std::vector<Data> DataVector;
-        
+
         mWorkUnitInputDatas.clear();
 
         for( const std::pair<Location, DataVector> & r_assignee_data_vector_pair : mAssigneeInputDatas )
@@ -136,7 +136,7 @@ public:
     {
         typedef AssignmentDataType<TOutputDataType> Data;
         typedef std::vector<Data> DataVector;
-        
+
         mAssigneeOutputDatas.clear();
 
         for( const std::pair<TContractorKeyType, DataVector> & r_work_unit_data_vector_pair : mWorkUnitOutputDatas )

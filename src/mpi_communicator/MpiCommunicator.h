@@ -1,11 +1,11 @@
 #pragma once
-
 #include<iostream>
 #include<vector>
 #include<map>
 #include<mpi.h>
 #include"Serializer.h"
 #include"DataProfile.h"
+#include"MpiLocation.h"
 
 namespace Communication
 {
@@ -14,7 +14,12 @@ class MpiCommunicator
 {
 public:
     typedef MpiLocation Location;
-    typedef typename MpiLocation::LessThan LocationLessThan;
+
+    template<typename TDataType>
+    using MapByLocationType = std::map<Location, TDataType, Location::LessThan>;
+
+    template<typename TDataType>
+    using PairByLocationType = std::pair<const Location, TDataType>;
 
     MpiCommunicator()
       : mMpiComm{MPI_COMM_WORLD}
@@ -27,23 +32,11 @@ public:
     ~MpiCommunicator()
     {}
 
-    void BuildCompleteCommunication()
-    {
-      int size;
-      MPI_Comm_size(mMpiComm, &size);
-
-      mSendSerializers.clear();
-      mRecvSerializers.clear();
-
-      mSendSerializers.resize(size);
-      mRecvSerializers.resize(size);
-    }
-
     Location Here() const
     {
         int mpi_rank, mpi_size;
-        Mpi_Comm_rank(mMpiComm, &mpi_rank);
-        Mpi_Comm_size(mMpiComm, &mpi_size);
+        MPI_Comm_rank(mMpiComm, &mpi_rank);
+        MPI_Comm_size(mMpiComm, &mpi_size);
         Location location(mMpiComm, mpi_rank, mpi_size);
         return location;
     }
@@ -51,33 +44,37 @@ public:
     Location GetPeerLocation(const int mpi_rank) const
     {
         int mpi_size;
-        Mpi_Comm_size(mMpiComm, &mpi_size);
+        MPI_Comm_size(mMpiComm, &mpi_size);
         Location location(mMpiComm, mpi_rank, mpi_size);
         return location;
     }
 
     template<typename TDataType>
-    void AllSendAllRecv( const std::map<Location, TDataType> & r_send_datas, std::map<Location, TDataType> & r_recv_datas, const int mpi_tag )
+    void AllSendAllRecv( const MapByLocationType<TDataType> & r_send_datas, MapByLocationType<TDataType> & r_recv_datas, const int mpi_tag )
     {
+        typedef PairByLocationType<TDataType> DataPair;
+        typedef PairByLocationType<DataUtilities::Serializer> SerializerPair;
+
         //clear
         mSendSerializers.clear();
         mRecvSerializers.clear();
         r_recv_datas.clear();
 
         //serializer r_send_datas
-        for( const TDataType & r_send_data_pair: r_send_datas )
+        for( const DataPair & r_send_data_pair: r_send_datas )
         {
-            Location send_to_location = r_send_data_pair.first;
-            TDataType & r_send_data = r_send_data_pair.second;
+            const Location send_to_location = r_send_data_pair.first;
+            const TDataType & r_send_data = r_send_data_pair.second;
 
-            Serializer & r_send_serializer = mSendSerializers[send_to_location];
+            DataUtilities::Serializer & r_send_serializer = mSendSerializers[send_to_location];
 
             //save to serializers
-            r_send_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+            r_send_serializer.ReserveSpaceForBufferHeader(DataUtilities::DataProfile::Default());
             std::size_t send_size = r_send_serializer.FreshSave(r_send_data);
 
             //update header
-            DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).SetBufferContentSize(send_size).MakeFromSender();
+            DataUtilities::DataProfile send_data_profile = DataUtilities::DataProfile::Default().Profile(r_send_data).MakeFromSender();
+            send_data_profile.SetBufferContentSize(send_size);
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }
 
@@ -85,12 +82,12 @@ public:
         AllSendAllRecvSerializer(mSendSerializers, mRecvSerializers, mpi_tag);
 
         //de-serializer r_recv_datas
-        for( Serializer & r_recv_serializer_pair: mRecvSerializers )
+        for( SerializerPair & r_recv_serializer_pair : mRecvSerializers )
         {
             Location recv_location = r_recv_serializer_pair.first;
-            Serializer & r_recv_serializer = r_recv_serializer_pair.second;
+            DataUtilities::Serializer & r_recv_serializer = r_recv_serializer_pair.second;
 
-            DataProfile recv_data_profile;
+            DataUtilities::DataProfile recv_data_profile;
             r_recv_serializer.ReadBufferHeader(recv_data_profile);
 
             //check
@@ -101,7 +98,7 @@ public:
             }
 
             //check
-            if( ! recv_data_profile.IsTrivial() )
+            if( recv_data_profile.IsTrivial() )
             {
                 std::cout<<__func__<<": recv serializer exit, but buffer header is marked trivial! exit"<<std::endl;
                 exit(EXIT_FAILURE);
@@ -120,10 +117,12 @@ public:
     }
 
     template<typename TDataType>
-    void AllGather( TDataType & r_send_data, std::map<TDataType> & r_recv_datas, int mpi_tag )
+    void AllGather( TDataType & r_send_data, MapByLocationType<TDataType> & r_recv_datas, int mpi_tag )
     {
+        typedef PairByLocationType<DataUtilities::Serializer> SerializerPair;
+
         //clear r_recv_datas
-        r_recv_datas.clear()
+        r_recv_datas.clear();
 
         int mpi_size;
         MPI_Comm_size(mMpiComm, &mpi_size);
@@ -133,14 +132,15 @@ public:
 
         //serialize r_send_data
         {
-            Serializer & r_send_serializer = mSendSerializers[root_location];
+            DataUtilities::Serializer & r_send_serializer = mSendSerializers[root_location];
 
             //save to serializer
-            r_send_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
+            r_send_serializer.ReserveSpaceForBufferHeader(DataUtilities::DataProfile::Default());
             std::size_t send_size = r_send_serializer.FreshSave(r_send_data);
 
             //update header
-            DataProfile send_data_profile = DataProfile::Default().Profile(r_send_data).SetBufferContentSize(send_size).MakeFromSender();
+            DataUtilities::DataProfile send_data_profile = DataUtilities::DataProfile::Default().Profile(r_send_data).MakeFromSender();
+            send_data_profile.SetBufferContentSize(send_size);
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }
 
@@ -148,12 +148,12 @@ public:
         AllGatherSerializer( mSendSerializers[root_location], mRecvSerializers, mpi_tag );
 
         //de-serializer r_recv_datas
-        for( Serializer & r_recv_serializer_pair: mRecvSerializers )
+        for( SerializerPair & r_recv_serializer_pair: mRecvSerializers )
         {
             Location recv_location = r_recv_serializer_pair.first;
-            Serializer & r_recv_serializer = r_recv_serializer_pair.second;
+            DataUtilities::Serializer & r_recv_serializer = r_recv_serializer_pair.second;
 
-            DataProfile recv_data_profile;
+            DataUtilities::DataProfile recv_data_profile;
             r_recv_serializer.ReadBufferHeader(recv_data_profile);
 
             //check
@@ -164,7 +164,7 @@ public:
             }
 
             //check
-            if( ! recv_data_profile.IsTrivial() )
+            if( recv_data_profile.IsTrivial() )
             {
                 std::cout<<__func__<<": recv serializer exit, but buffer header is marked trivial! exit"<<std::endl;
                 exit(EXIT_FAILURE);
@@ -184,12 +184,12 @@ public:
 
 private:
 
-    void AllSendAllRecvSerializer( const std::map<Location, Serializer> & r_send_serializer_pairs, std::map<Location, Serializer> & r_recv_serializer_pairs, int mpi_tag )
+    void AllSendAllRecvSerializer( const MapByLocationType<DataUtilities::Serializer> & r_send_serializer_map, MapByLocationType<DataUtilities::Serializer> & r_recv_serializer_map, int mpi_tag )
     {
-        typedef std::pair<Location, Serializer> SerializerPair;
+        typedef PairByLocationType<DataUtilities::Serializer> SerializerPair;
 
         //clear recv serializers
-        r_recv_serializer_pairs.clear();
+        r_recv_serializer_map.clear();
 
         int mpi_size;
         MPI_Comm_size(mMpiComm, &mpi_size);
@@ -203,12 +203,13 @@ private:
             recv_sizes[i] = 0;
         }
 
-        for( SerializerPair & r_send_serializer_pair : r_send_serializer_pairs )
+        //message sizes
+        for( const SerializerPair & r_send_serializer_pair : r_send_serializer_map )
         {
             Location send_to_location = r_send_serializer_pair.first;
-            Serializer & r_send_serializer = r_send_serializer_pair.second;
+            const DataUtilities::Serializer & r_send_serializer = r_send_serializer_pair.second;
 
-            DataProfile send_data_profile;
+            DataUtilities::DataProfile send_data_profile;
             r_send_serializer.ReadBufferHeader(send_data_profile);
 
             int i = send_to_location.MpiRank();
@@ -227,10 +228,10 @@ private:
             if(recv_sizes[i] > 0)
             {
                 Location recv_from_location = GetPeerLocation(i);
-                Serializer & r_recv_serializer = r_send_serializer_pairs[recv_from_location];//this will insert new entry into map
+                DataUtilities::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];//this will insert new entry into map
                 r_recv_serializer.IncreaseBufferSize(recv_sizes[i]);
-                r_recv_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
-                r_recv_serializer.WriteBufferHeader( DataProfile::Default().MakeNotFromSender().MakeTrivial() );
+                r_recv_serializer.ReserveSpaceForBufferHeader(DataUtilities::DataProfile::Default());
+                r_recv_serializer.WriteBufferHeader( DataUtilities::DataProfile::Default().MakeNotFromSender().MakeTrivial() );
             }
         }
 
@@ -251,7 +252,7 @@ private:
             if( recv_sizes[i] > 0 )
             {
                 Location recv_from_location = GetPeerLocation(i);
-                Serializer & r_recv_serializer = r_recv_serializer_pairs[recv_from_location];
+                DataUtilities::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];
                 MPI_Irecv( r_recv_serializer.BufferPointer(), recv_sizes[i], MPI_CHAR, i, mpi_tag, mMpiComm, &(reqs[num_event]) );
                 num_event++;
             }
@@ -259,7 +260,7 @@ private:
             if( send_sizes[i] > 0 )
             {
                 Location send_to_location = GetPeerLocation(i);
-                const Serializer & r_send_serializer = mSendSerializers[send_to_location];
+                const DataUtilities::Serializer & r_send_serializer = mSendSerializers[send_to_location];
                 MPI_Isend( r_send_serializer.BufferPointer(), send_sizes[i], MPI_CHAR, i, mpi_tag, mMpiComm, &(reqs[num_event]) );
                 num_event++;
             }
@@ -274,10 +275,10 @@ private:
         delete [] stats;
     }
 
-    void AllGatherSerializer( const Serializer & r_send_serializer, std::map<Location, Serializer> & r_recv_serializer_pairs, int mpi_tag )
+    void AllGatherSerializer( const DataUtilities::Serializer & r_send_serializer, MapByLocationType<DataUtilities::Serializer>  & r_recv_serializer_map, int mpi_tag )
     {
         //clear recv serializers
-        r_recv_serializer_pairs.clear();
+        r_recv_serializer_map.clear();
 
         int mpi_size;
         MPI_Comm_size(mMpiComm, &mpi_size);
@@ -293,7 +294,7 @@ private:
 
         //serialize send_data
         int send_size;
-        DataProfile send_data_profile;
+        DataUtilities::DataProfile send_data_profile;
         r_send_serializer.ReadBufferHeader(send_data_profile);
 
         send_size = send_data_profile.GetBufferContentSize();
@@ -314,11 +315,11 @@ private:
             if(recv_sizes[i] > 0)
             {
                 Location recv_from_location = GetPeerLocation(i);
-                Serializer & r_recv_serializer = r_send_serializer_pairs[recv_from_location];
+                DataUtilities::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];
 
                 r_recv_serializer.IncreaseBufferSize(recv_sizes[i]);
-                r_recv_serializer.ReserveSpaceForBufferHeader(DataProfile::Default());
-                r_recv_serializer.WriteBufferHeader( DataProfile::Default().MakeNotFromSender().MakeTrivial() );
+                r_recv_serializer.ReserveSpaceForBufferHeader(DataUtilities::DataProfile::Default());
+                r_recv_serializer.WriteBufferHeader( DataUtilities::DataProfile::Default().MakeNotFromSender().MakeTrivial() );
             }
         }
 
@@ -339,7 +340,7 @@ private:
             if( recv_sizes[i] > 0 )
             {
                 Location location = GetPeerLocation(i);
-                Serializer & r_recv_serializer = r_recv_serializer_pairs[location];
+                DataUtilities::Serializer & r_recv_serializer = r_recv_serializer_map[location];
 
                 MPI_Irecv( r_recv_serializer.BufferPointer(), recv_sizes[i], MPI_CHAR, i, mpi_tag, mMpiComm, &(reqs[num_event]) );
                 num_event++;
@@ -362,8 +363,8 @@ private:
     }
 
     MPI_Comm mMpiComm;
-    std::map<Location, Serializer> mSendSerializers;
-    std::map<Location, Serializer> mRecvSerializers;
+    MapByLocationType<DataUtilities::Serializer> mSendSerializers;
+    MapByLocationType<DataUtilities::Serializer> mRecvSerializers;
 };
 
 }

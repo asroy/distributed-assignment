@@ -1,15 +1,15 @@
 #pragma once
-
 #include<vector>
+
+namespace DataUtilities
+{
 
 //profile basic type
 #define DATAPROFILE_PROFILE_BASIC_TYPE(TDATATYPE)                           \
 DataProfile Profile( const TDATATYPE & r_data ) const                       \
 {                                                                           \
-    std::cout<<"Profile basic type"<<std::endl;                             \
     return DataProfile::Default().MakeNonTrivial();                         \
 }
-
 
 class DataProfile
 {
@@ -56,8 +56,11 @@ public:
         return *this;
     }
 
-    void SetBufferContentSize(const std::size_t buffer_size)
-    { mBufferContentSize = buffer_size; }
+    DataProfile SetBufferContentSize(const std::size_t buffer_size)
+    {
+        mBufferContentSize = buffer_size;
+        return *this;
+    }
 
     std::size_t GetBufferContentSize()
     {
@@ -89,7 +92,6 @@ public:
     template<typename TDataType>
     DataProfile Profile ( const std::vector<TDataType> & r_vector ) const
     {
-        std::cout<<"Profile vector"<<std::endl;
         DataProfile profile = DataProfile::Default();
 
         if( r_vector.size() == 0 )
@@ -104,7 +106,6 @@ public:
     template<typename TDataType>
     DataProfile Profile ( const TDataType & r_data ) const
     {
-        std::cout<<"Profile user defined data"<<std::endl;
         return r_data.Profile(*this);
     }
 
@@ -114,3 +115,4 @@ private:
       std::size_t mBufferContentSize;
 };
 
+}

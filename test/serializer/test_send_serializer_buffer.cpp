@@ -37,13 +37,13 @@ int main( int argc, char** argv )
     // DataPrinter data_printer;
     // data_printer.Print(send_vector);
 
-    Serializer send_serial;
+    DataUtilities::Serializer send_serial;
 
     // buffer header
-    send_serial.ReserveSpaceForBufferHeader(DataProfile::Default());
+    send_serial.ReserveSpaceForBufferHeader(DataUtilities::DataProfile::Default());
 
     const std::vector<A> & r_send_vector = send_vector;
-    DataProfile send_data_profile = DataProfile::Default().Profile(r_send_vector).MakeFromSender();
+    DataUtilities::DataProfile send_data_profile = DataUtilities::DataProfile::Default().Profile(r_send_vector).MakeFromSender();
     send_serial.WriteBufferHeader(send_data_profile);
 
     std::cout << "send_serial, IsTrivial?" << send_data_profile.IsTrivial() <<std::endl;
@@ -70,14 +70,14 @@ int main( int argc, char** argv )
 
     std::cout << rank << ": recv_size " << recv_size << std::endl;
 
-    Serializer recv_serial;
+    DataUtilities::Serializer recv_serial;
 
     //increase buffer size
     recv_serial.IncreaseBufferSize(recv_size);
 
     // buffer header
-    recv_serial.ReserveSpaceForBufferHeader(DataProfile::Default());
-    recv_serial.WriteBufferHeader(DataProfile::Default().MakeNotFromSender());
+    recv_serial.ReserveSpaceForBufferHeader(DataUtilities::DataProfile::Default());
+    recv_serial.WriteBufferHeader(DataUtilities::DataProfile::Default().MakeNotFromSender());
 
     //receive
     MPI_Recv( recv_serial.BufferPointer(), recv_size, MPI_CHAR, 0, 1, MPI_COMM_WORLD, &status );
@@ -86,7 +86,7 @@ int main( int argc, char** argv )
 
     int load_size = (int) recv_serial.FreshLoad(recv_vector);
 
-    DataProfile recv_data_profile;
+    DataUtilities::DataProfile recv_data_profile;
     recv_serial.ReadBufferHeader(recv_data_profile);
 
     std::cout << "recv_serial, IsTrivial?" << recv_data_profile.IsTrivial() <<std::endl;
@@ -95,8 +95,8 @@ int main( int argc, char** argv )
     std::cout << " recv_vector size " <<recv_vector.size() << std::endl;
 
     //print
-    // DataPrinter data_printer;
-    // data_printer.Print(recv_vector);
+    DataUtilities::DataPrinter data_printer;
+    data_printer.Print(recv_vector);
 
     std::cin >> dump;
   }

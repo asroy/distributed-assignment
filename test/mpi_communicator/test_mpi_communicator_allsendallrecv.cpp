@@ -10,7 +10,9 @@
 
 int main( int argc, char** argv )
 {
-  typedef std::vector<A> DataContainerType;
+  typedef Communication::MpiCommunicator::Location Location;
+  typedef std::vector<A> DataVector;
+  typedef std::pair<const Location, std::vector<A>> DataVectorPair;
 
   int mpi_rank, mpi_size;
 
@@ -18,42 +20,47 @@ int main( int argc, char** argv )
   MPI_Comm_size( MPI_COMM_WORLD, &mpi_size );
   MPI_Comm_rank( MPI_COMM_WORLD, &mpi_rank );
 
-  std::cout << "rank " << mpi_rank << " getPID "<< ::getpid() << std::endl;
+  std::cout << "rank " << mpi_rank << " PID "<< ::getpid() << std::endl;
 
   int dump;
   // std::cin >> dump;
 
-  A a0 = {1,1.1,2.1,3.1,{4,4.1,'b'}};
+  A a0 = {mpi_rank,1.0*mpi_rank,1.0*mpi_rank,1.0*mpi_rank,{mpi_rank,1.0*mpi_rank,'b'}};
 
-  //send data containers
-  std::vector<DataContainerType> send_data_containers;
-  send_data_containers.resize(mpi_size);
 
+  //communicator
+  Communication::MpiCommunicator communicator;
+
+  //data containers
+  std::map<Location, DataVector, Location::LessThan> send_data_vector_map;
+  std::map<Location, DataVector, Location::LessThan> recv_data_vector_map;
+
+  // data to send
   for( int i = 0; i < mpi_size; i++ )
   {
-    DataContainerType & r_send_data_container = send_data_containers[i];
-    r_send_data_container.clear();
-    for( int j = 0; j < 10000; j++ )
-      r_send_data_container.push_back(a0);
-  }
+    Location send_to_location = communicator.GetPeerLocation(i);
+    DataVector & r_send_data_vector = send_data_vector_map[send_to_location];
 
-  //recv data containers
-  std::vector<DataContainerType> recv_data_containers;
-  recv_data_containers.resize(mpi_size);
+    for( int j = 0; j < 100; j++ )
+      r_send_data_vector.push_back(a0);
+  }
 
   //send recv
-  MpiCommunicator communicator;
-  communicator.BuildCompleteCommunication();
-  communicator.AllSendAllRecv( send_data_containers, recv_data_containers, 0 );
+  communicator.AllSendAllRecv( send_data_vector_map, recv_data_vector_map, 0 );
 
-  //print
-  for( int i = 0; i < mpi_size; i++ )
+  //print recv
+  for( const DataVectorPair & r_recv_data_vector_pair : recv_data_vector_map )
   {
-    std::cout<<"recv vector sizes"<<recv_data_containers[i].size()<<std::endl;
-    DataPrinter data_printer;
-    // data_printer.Print(recv_data_containers[i]);
-  }
+    Location recv_from_location = r_recv_data_vector_pair.first;
+    const DataVector & r_rev_data_vector = r_recv_data_vector_pair.second;
 
+    std::cout<<"recv from rank "<<recv_from_location.MpiRank()<<std::endl;
+    std::cout<<"recv vector sizes: "<<r_rev_data_vector.size()<<std::endl;
+
+    DataUtilities::DataPrinter data_printer;
+    data_printer.Print(recv_data_vector_map[recv_from_location]);
+    std::cout<<std::endl;
+  }
 
   std::cin >> dump;
 

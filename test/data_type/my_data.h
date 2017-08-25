@@ -7,26 +7,26 @@ class B
     double z;
     char c;
 
-    void Save( Serializer & r_serializer ) const
+    void Save( DataUtilities::Serializer & r_serializer ) const
     {
       r_serializer.Save(i);
       r_serializer.Save(z);
       r_serializer.Save(c);
     }
 
-    void Load( Serializer & r_serializer )
+    void Load( DataUtilities::Serializer & r_serializer )
     {
       r_serializer.Load(i);
       r_serializer.Load(z);
       r_serializer.Load(c);
     }
 
-    DataProfile Profile( DataProfile & r_data_profile ) const
+    DataUtilities::DataProfile Profile( DataUtilities::DataProfile & r_data_profile ) const
     {
       return r_data_profile.MakeNonTrivial();
     }
 
-    void Print( const DataPrinter & r_data_printer ) const
+    void Print( const DataUtilities::DataPrinter & r_data_printer ) const
     {
       std::cout << "{B: ";
       r_data_printer.Print(i);
@@ -35,9 +35,9 @@ class B
       std::cout << "}";
     }
 
-  friend class Serializer;
-  friend class DataProfile;
-  friend class DataPrinter;
+  friend class DataUtilities::Serializer;
+  friend class DataUtilities::DataProfile;
+  friend class DataUtilities::DataPrinter;
 };
 
 class A
@@ -48,7 +48,7 @@ class A
     double y[2];
     B b;
 
-    void Save( Serializer & r_serializer ) const
+    void Save( DataUtilities::Serializer & r_serializer ) const
     {
       r_serializer.Save(i);
       r_serializer.Save(x);
@@ -57,7 +57,7 @@ class A
       r_serializer.Save(b);
     }
 
-    void Load( Serializer & r_serializer )
+    void Load( DataUtilities::Serializer & r_serializer )
     {
       r_serializer.Load(i);
       r_serializer.Load(x);
@@ -66,12 +66,12 @@ class A
       r_serializer.Load(b);
     }
 
-    DataProfile Profile( DataProfile & r_data_profile ) const
+    DataUtilities::DataProfile Profile( DataUtilities::DataProfile & r_data_profile ) const
     {
       return r_data_profile.MakeNonTrivial();
     }
 
-    void Print( const DataPrinter & r_data_printer ) const
+    void Print( const DataUtilities::DataPrinter & r_data_printer ) const
     {
       std::cout << "{A: ";
       r_data_printer.Print(i);
@@ -82,8 +82,8 @@ class A
       std::cout << "}";
     }
 
-  friend class Serializer;
-  friend class DataProfile;
-  friend class DataPrinter;
+  friend class DataUtilities::Serializer;
+  friend class DataUtilities::DataProfile;
+  friend class DataUtilities::DataPrinter;
 };
 

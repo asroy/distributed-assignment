@@ -1,6 +1,8 @@
 #pragma once
-
 #include<vector>
+
+namespace DataUtilities
+{
 
 //print basic type
 #define DATAPRINTER_PRINT_BASIC_TYPE(TDATATYPE)         \
@@ -51,3 +53,4 @@ class DataPrinter
     }
 };
 
+}

@@ -1,9 +1,11 @@
 #pragma once
-
 #include<vector>
 #include<cstring>
 #include<iostream>
 #include"TypeId.h"
+
+namespace DataUtilities
+{
 
 //save basic datatype
 #define SERIALIZER_SAVE_BASIC_TYPE(TDataType)                     \
@@ -238,3 +240,5 @@ private:
     std::size_t mBufferSavePos;
     std::size_t mBufferLoadPos;
 };
+
+}

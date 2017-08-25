@@ -1,9 +1,13 @@
+#pragma once
 #include<iostream>
+
+namespace DistributedAssignment
+{
 
 template<typename TContractorType,
          typename TContractorKeyType,
          typename TCommunicatorType>
-class DistributedContractorContainer
+class DistributedContractorManager
 {
 public:
     typedef typename TCommunicatorType::Location Location;
@@ -12,13 +16,13 @@ public:
     typedef std::map<TContractorKeyType, ContractorPointer> ContractorPointerContainer;
     typedef std::map<TContractorKeyType, Location> LocationContainer;
 
-    DistributedContractorContainer()
+    DistributedContractorManager()
     :   mLocalContractors(),
         mGlobalContractorsLocation(),
         mLocalContractorNewlyAdded{false}
     {}
 
-    ~DistributedContractorContainer()
+    ~DistributedContractorManager()
     {}
 
     void Clear()
@@ -28,7 +32,7 @@ public:
     }
 
     void AddLocalContractor( const TContractorType & r_contractor )
-    { 
+    {
         mLocalContractors[r_contractor.Key()] = & r_contractor;
         mLocalContractorNewlyAdded = true;
     }
@@ -53,14 +57,14 @@ public:
 
         //global contractors location
         mGlobalContractorsLocation.clear();
-        
+
         for( const std::pair<Location, ContractorKeyVector> & r_global_contractor_key_vector_pair : global_contractor_key_vector_map )
         {
             Location loation = r_global_contractor_key_vector_pair.first;
             ContractorKeyVector r_global_contractor_key_vector = r_global_contractor_key_vector_pair.second;
 
             for ( const TContractorKeyType & r_global_contractor_key : r_global_contractor_key_vector )
-                mGlobalContractorsLocation[assignee_key] = location;
+                mGlobalContractorsLocation[r_global_contractor_key] = location;
         }
     }
 
@@ -88,3 +92,5 @@ private:
     LocationContainer mGlobalContractorsLocation;
     bool mLocalContractorNewlyAdded;
 };
+
+}
