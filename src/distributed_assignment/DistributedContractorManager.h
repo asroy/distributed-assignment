@@ -14,8 +14,8 @@ public:
     typedef typename TContractorKeyIssuerType::Key ContractorKey;
     typedef TContractorType * ContractorPointer;
 
-    typedef std::map<ContractorKey, ContractorPointer> ContractorPointerMap;
-    typedef std::map<ContractorKey, Location> LocationMap;
+    typedef std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ContractorPointerMap;
+    typedef std::map<ContractorKey, Location, typename Location::LessThanComparator> LocationMap;
 
     template<typename TDataType>
     using PairByContractorKeyType = std::pair<const ContractorKey, TDataType>;
@@ -26,8 +26,7 @@ public:
     :   mpCommunicator{& communicator},
         mContractorKeyIssuer(communicator),
         mLocalContractorsPointer(),
-        mGlobalContractorsLocation(),
-        mLocalContractorNewlyAdded{false}
+        mGlobalContractorsLocation()
     {}
 
     ~DistributedContractorManager()
@@ -43,7 +42,6 @@ public:
     {
         ContractorKey key = mContractorKeyIssuer.IssueNewKey();
         mLocalContractorsPointer[key] = & r_contractor;
-        mLocalContractorNewlyAdded = true;
     }
 
     void GenerateGlobalContractorsLocation( const int mpi_tag = 0 )
@@ -69,7 +67,7 @@ public:
 
         for( const std::pair<Location, ContractorKeyVector> & r_global_contractor_key_vector_pair : global_contractor_key_vector_map )
         {
-            Location loation = r_global_contractor_key_vector_pair.first;
+            Location location = r_global_contractor_key_vector_pair.first;
             ContractorKeyVector r_global_contractor_key_vector = r_global_contractor_key_vector_pair.second;
 
             for ( const ContractorKey & r_global_contractor_key : r_global_contractor_key_vector )
@@ -80,14 +78,13 @@ public:
     ContractorPointerMap & LocalContractorsPointer()
     { return mLocalContractorsPointer; }
 
-
     LocationMap & GlobalContractorsLocation()
     { return mLocalContractorsPointer; }
 
     ContractorPointer FindLocalContractorPointer( const ContractorKey key ) const
     {
-        typename ContractorPointerMap::iterator it = mLocalContractor.find(key);
-        if( it == mLocalContractor.end() )
+        typename ContractorPointerMap::iterator it = mLocalContractorsPointer.find(key);
+        if( it == mLocalContractorsPointer.end() )
             return nullptr;
         else
             return it->second;
@@ -95,7 +92,7 @@ public:
 
     Location ContactorLocation( const ContractorKey key ) const
     {
-        LocationMap::iterator it = mGlobalContractorsLocation.find(key);
+        typename LocationMap::iterator it = mGlobalContractorsLocation.find(key);
         if( it == mGlobalContractorsLocation.end() )
             return Location::Nowhere();
         else
@@ -103,11 +100,10 @@ public:
     }
 
 private:
-    TCommunicatorType * mpCommunicator;
+    const TCommunicatorType * const mpCommunicator;
     TContractorKeyIssuerType mContractorKeyIssuer;
     ContractorPointerMap mLocalContractorsPointer;
     LocationMap mGlobalContractorsLocation;
-    bool mLocalContractorNewlyAdded;
 };
 
 }

@@ -14,15 +14,18 @@ DataProfile Profile( const TDATATYPE & r_data ) const                       \
 class DataProfile
 {
 public:
-    DataProfile() = delete;
+    DataProfile()
+    :   mIsTrivial{true},
+        mIsFromSender{false},
+        mBufferContentSize{0}
+    {}
 
     ~DataProfile()
     {}
 
     static DataProfile Default()
     {
-        DataProfile profile = {true, true, false, 0};
-        return profile;
+        return DataProfile{true, true, 0};
     }
 
     DataProfile MakeTrivial()
@@ -103,6 +106,12 @@ public:
     }
 
 private:
+    DataProfile( const bool is_trivial, const bool is_from_sender, std::size_t buffer_content_size )
+    :   mIsTrivial{is_trivial},
+        mIsFromSender{is_from_sender},
+        mBufferContentSize{buffer_content_size}
+    {}
+
     bool mIsTrivial;
     bool mIsFromSender;
     std::size_t mBufferContentSize;

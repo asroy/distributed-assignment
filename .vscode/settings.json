@@ -26,6 +26,9 @@
         "cstring": "cpp",
         "array": "cpp",
         "utility": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "cstdarg": "cpp",
+        "cstddef": "cpp",
+        "ctime": "cpp"
     }
 }

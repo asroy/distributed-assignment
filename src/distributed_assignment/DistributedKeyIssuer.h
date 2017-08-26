@@ -1,5 +1,5 @@
 #pragma once
-#include"SimpleKey.h"
+#include"DistributedKey.h"
 
 namespace DistributedAssignment
 {
@@ -8,13 +8,12 @@ template<typename TCommunicatorType>
 class DistributedKeyIssuer
 {
 public:
-    typedef typename TCommunicatorType::Location Location;
-    typedef SimpleKey<Location> Key;
+    typedef DistributedKey<TCommunicatorType> Key;
 
     DistributedKeyIssuer() = delete;
 
-    DistributedKeyIssuer( TCommunicatorType & communicator )
-    :   mNumOfKeyIssued{0},
+    DistributedKeyIssuer( const TCommunicatorType & communicator )
+    :   mNumKeyIssued{0},
         mpCommunicator{& communicator}
     {}
 
@@ -23,19 +22,19 @@ public:
 
     void Clear()
     {
-        mNumOfKeyIssued = 0;
+        mNumKeyIssued = 0;
     }
 
     Key IssueNewKey()
     {
-        Key key = { mpCommunicator->Here(), mNumOfKeyIssued };
-        mNumberOfKeyIssued++;
+        Key key = { mpCommunicator->Here(), mNumKeyIssued };
+        mNumKeyIssued++;
         return key;
     }
 
 private:
-    std::size_t mNumOfKeyIssued;
-    TCommunicatorType * mpCommunicator;
+    std::size_t mNumKeyIssued;
+    const TCommunicatorType * const mpCommunicator;
 };
 
 }

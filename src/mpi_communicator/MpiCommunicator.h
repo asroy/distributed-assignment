@@ -16,7 +16,7 @@ public:
     typedef MpiLocation Location;
 
     template<typename TDataType>
-    using MapByLocationType = std::map<Location, TDataType, Location::LessThan>;
+    using MapByLocationType = std::map<Location, TDataType, typename Location::LessThanComparator>;
 
     template<typename TDataType>
     using PairByLocationType = std::pair<const Location, TDataType>;
@@ -73,7 +73,8 @@ public:
             std::size_t send_size = r_send_serializer.FreshSave(r_send_data);
 
             //update header
-            DataUtility::DataProfile send_data_profile = DataUtility::DataProfile::Default().Profile(r_send_data).MakeFromSender();
+            DataUtility::DataProfile send_data_profile;
+            send_data_profile.Profile(r_send_data).MakeFromSender();
             send_data_profile.SetBufferContentSize(send_size);
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }
@@ -139,7 +140,8 @@ public:
             std::size_t send_size = r_send_serializer.FreshSave(r_send_data);
 
             //update header
-            DataUtility::DataProfile send_data_profile = DataUtility::DataProfile::Default().Profile(r_send_data).MakeFromSender();
+            DataUtility::DataProfile send_data_profile;
+            send_data_profile.Profile(r_send_data).MakeFromSender();
             send_data_profile.SetBufferContentSize(send_size);
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }

@@ -30,7 +30,7 @@ public:
     using AssignmentDataVectorType = std::vector<AssignmentDataType<TDataType>>;
 
     template<typename TKeyType, typename TDataType>
-    using AssignmentDataVectorMapType = std::map<TKeyType, AssignmentDataVectorType<TDataType>, TKeyType::LessThan>;
+    using AssignmentDataVectorMapType = std::map<TKeyType, AssignmentDataVectorType<TDataType>, typename TKeyType::LessThanComparator>;
 
     typedef AssignmentDataVectorType<TInputDataType>  WorkUnitInputDataVector;
     typedef AssignmentDataVectorType<TOutputDataType> WorkUnitOutputDataVector;
