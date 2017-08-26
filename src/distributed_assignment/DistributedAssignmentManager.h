@@ -8,21 +8,23 @@ namespace DistributedAssignment{
 
 template<typename TAssignorType,
          typename TAssigneeType,
-         typename TContractorKeyType,
-         typename TAssignmentKeyType,
-         typename TCommunicatorType,
          typename TInputDataType,
-         typename TOutputDataType>
+         typename TOutputDataType,
+         typename TCommunicatorType,
+         typename TContractorKeyType,
+         typename TDistributedAssignmentKeyIssuerType>
 class DistributedAssignmentManager
 {
 public:
     typedef typename TCommunicatorType::Location Location;
+    typedef typename TDistributedAssignmentKeyIssuerType<TCommunicatorType> AssignmentKeyIssuer;
+    typedef typename AssignmentKeyIssuer::Key AssignmentKey;
 
     template<typename TContractorType>
-    using ContractorContainerType = DistributedContractorManager<TContractorType,TContractorKeyType,TLocationType>;
+    using ContractorManagerType = DistributedContractorManager<TContractorType,TContractorKeyIssuerType,TCommunicatorType>;
 
     template<typename TDataType>
-    using AssignmentDataType = AssignmentData<TContractorKeyType,TAssignmentKeyType,TDataType>;
+    using AssignmentDataType = AssignmentData<TContractorKeyType,AssignmentKey,TDataType>;
 
     template<typename TDataType>
     using AssignmentDataVectorType = std::vector<AssignmentDataType<TDataType>>;
@@ -33,41 +35,44 @@ public:
     typedef AssignmentDataVectorType<TInputDataType>  WorkUnitInputDataVector;
     typedef AssignmentDataVectorType<TOutputDataType> WorkUnitOutputDataVector;
 
-    DistributedAssignmentManager()
-    :   mpCommunicator{nullptr},
-        mpAssignors{nullptr},
-        mpAssignees{nullptr}
-    {}
+    DistributedAssignmentManager() = delete();
 
-    DistributedAssignmentManager( TCommunicatorType & r_communicator, AssignorContainer & r_assignors, AssigneeContainer & r_assignees  )
-    :   mpCommunicator{& r_communicator},
-        mpAssignors{& r_assignors},
-        mpAssignees{& r_assignees}
+    DistributedAssignmentManager
+    (   TCommunicatorType & r_communicator,
+        ContractorManagerType<TAssignorType> & r_assignor_manager,
+        ContractorManagerType<TAssigneeType> & r_assignee_manager )
+    :   mpCommunicator {& r_communicator},
+        mpAssignorManager {& r_assignor_manager},
+        mpAssigneeManager {& r_assignee_manager},
+        mAssignmentKeyIssuer (r_communicator)
     {}
 
     ~DistributedAssignmentManager()
     {
         mpCommunicator = nullptr;
-        mpAssignors = nullptr;
-        mpAssignees = nullptr;
+        mpAssignorManager = nullptr;
+        mpAssigneeManager = nullptr;
     }
 
-    void StartAddAssignment()
+    void ClearAllAssignment()
     {
+        mAssignmentKeyIssuer.Clear();
+
         mAssignorInputDatas.clear();
         mAssigneeInputDatas.clear();
+        mWorkUnitInputDatas.clear();
+        mAssignorOutputDatas.clear();
+        mAssigneeOutputDatas.clear();
+        mWorkUnitOutputDatas.clear();
     }
 
-    void FinishAddAssignment()
-    {}
-
-    TAssignmentKeyType AddAssignment( TContractorKeyType assignor_key, TContractorKeyType assignee_key, TInputDataType input_data )
+    AssignmentKey AddAssignment( TContractorKeyType assignor_key, TContractorKeyType assignee_key, TInputDataType input_data )
     {
-        TAssignmentKeyType assignment_key = //generate a new assignment key ?????????????????
+        AssignmentKey assignment_key = mAssignmentKeyIssuer.IssueNewKey();
 
         AssignmentData assignment_data = { assignor_key, assignment_key, assignee_key, input_data };
 
-        Location assignee_location = mpAssignees.ContactorLocation(assignee_key);
+        Location assignee_location = mpAssigneeManager.ContactorLocation(assignee_key);
 
         if( assignee_location == Location::NoWhere() )
         {
@@ -120,8 +125,8 @@ public:
         }
 
         //process
-        TAssigneeType & r_assignee = mpAssignees->LocalContractor(assignee_key);
-        r_assignee.ProcessDatas(inputs, outputs);
+        TAssigneeType & r_assignee = mpAssigneeManager->LocalContractor(assignee_key);
+        r_assignee.Execute(inputs, outputs);
 
         for ( int i == 0; i < assignments_size; i++ )
         {
@@ -156,13 +161,15 @@ public:
         mpCommunicator->AllSendAllRecv( mAssigneeOutputDatas, mAssignorOutputDatas );
     }
 
-    TOutputDataType GetResult( TContractorKeyType assignor_key, TAssignmentKeyType assignment_key );
+    TOutputDataType GetResult( TContractorKeyType assignor_key, AssignmentKey assignment_key );
 
 private:
     TCommunicatorType * mpCommunicator;
 
-    ContractorContainerType<TAssignorType> * mpAssignors;
-    ContractorContainerType<TAssigneeType> * mpAssignees;
+    ContractorManagerType<TAssignorType> * mpAssignorManager;
+    ContractorManagerType<TAssigneeType> * mpAssigneeManager;
+
+    AssignmentKeyIssuer mAssignmentKeyIssuer;
 
     AssignmentDataVectorMapType<Location,           TInputDataType> mAssignorInputDatas;
     AssignmentDataVectorMapType<Location,           TInputDataType> mAssigneeInputDatas;

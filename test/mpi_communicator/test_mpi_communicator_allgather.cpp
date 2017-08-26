@@ -50,7 +50,7 @@ int main( int argc, char** argv )
         std::cout<<"recv from rank "<<recv_from_location.MpiRank()<<std::endl;
         std::cout<<"recv vector sizes: "<<r_rev_data_vector.size()<<std::endl;
 
-        DataUtilities::DataPrinter data_printer;
+        DataUtility::DataPrinter data_printer;
         data_printer.Print(recv_data_vector_map[recv_from_location]);
         std::cout<<std::endl;
     }

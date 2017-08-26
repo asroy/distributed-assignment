@@ -4,17 +4,17 @@ namespace DistributedAssignment
 {
 
 template<typename TLocationType>
-class SimpleKey
+class DistributedKey
 {
 public:
-    SimpleKey() = delete;
+    DistributedKey() = delete;
 
-    ~SimpleKey()
+    ~DistributedKey()
     {}
 
     struct LessThan
     {
-        bool operator() ( const SimpleKey & a, const SimpleKey & b ) const
+        bool operator() ( const DistributedKey & a, const DistributedKey & b ) const
         {
             if( a.mBirthPlace.LessThan(b.mBirthPlace) )
                 return true;
@@ -31,7 +31,7 @@ private:
     TLocationType mBirthPlace;
     std::size_t mLocalId;
 
-    friend class SimpleKeyIssuer;
+    friend class DistributedKeyIssuer;
 };
 
 }

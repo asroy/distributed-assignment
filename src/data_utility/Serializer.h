@@ -4,7 +4,7 @@
 #include<iostream>
 #include"TypeId.h"
 
-namespace DataUtilities
+namespace DataUtility
 {
 
 //save basic datatype

@@ -5,21 +5,26 @@ namespace DistributedAssignment
 {
 
 template<typename TCommunicatorType>
-class SimpleKeyIssuer
+class DistributedKeyIssuer
 {
 public:
     typedef typename TCommunicatorType::Location Location;
     typedef SimpleKey<Location> Key;
 
-    SimpleKeyIssuer() = delete;
+    DistributedKeyIssuer() = delete;
 
-    SimpleKeyIssuer( TCommunicatorType & communicator )
+    DistributedKeyIssuer( TCommunicatorType & communicator )
     :   mNumOfKeyIssued{0},
         mpCommunicator{& communicator}
     {}
 
-    ~SimpleKeyIssuer()
+    ~DistributedKeyIssuer()
     {}
+
+    void Clear()
+    {
+        mNumOfKeyIssued = 0;
+    }
 
     Key IssueNewKey()
     {

@@ -1,7 +1,7 @@
 #pragma once
 #include<vector>
 
-namespace DataUtilities
+namespace DataUtility
 {
 
 //print basic type

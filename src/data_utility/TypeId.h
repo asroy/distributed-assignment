@@ -2,7 +2,7 @@
 #include<cxxabi.h>
 #include<typeinfo>
 
-namespace DataUtilities
+namespace DataUtility
 {
 
 template<typename T>

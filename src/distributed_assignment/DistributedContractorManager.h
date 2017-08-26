@@ -77,7 +77,14 @@ public:
         }
     }
 
-    ContractorPointer FindLocalContractor( const ContractorKey key ) const
+    ContractorPointerMap & LocalContractorsPointer()
+    { return mLocalContractorsPointer; }
+
+
+    LocationMap & GlobalContractorsLocation()
+    { return mLocalContractorsPointer; }
+
+    ContractorPointer FindLocalContractorPointer( const ContractorKey key ) const
     {
         typename ContractorPointerMap::iterator it = mLocalContractor.find(key);
         if( it == mLocalContractor.end() )
