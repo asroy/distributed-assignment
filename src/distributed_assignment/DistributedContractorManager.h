@@ -15,14 +15,14 @@ public:
     typedef TContractorType * ContractorPointer;
 
     typedef std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ContractorPointerMap;
-    typedef std::map<ContractorKey, Location, typename Location::LessThanComparator> LocationMap;
+    typedef std::map<ContractorKey, Location, typename ContractorKey::LessThanComparator> LocationMap;
 
     template<typename TDataType>
     using PairByContractorKeyType = std::pair<const ContractorKey, TDataType>;
 
     DistributedContractorManager() = delete;
 
-    DistributedContractorManager( const TCommunicatorType & communicator )
+    DistributedContractorManager( TCommunicatorType & communicator )
     :   mpCommunicator{& communicator},
         mContractorKeyIssuer(communicator),
         mLocalContractorsPointer(),
@@ -47,7 +47,7 @@ public:
     void GenerateGlobalContractorsLocation( const int mpi_tag = 0 )
     {
         typedef std::vector<ContractorKey> ContractorKeyVector;
-        typedef std::map<Location, ContractorKeyVector> ContractorKeyVectorMap;
+        typedef std::map<Location, ContractorKeyVector, typename Location::LessThanComparator> ContractorKeyVectorMap;
 
         ContractorKeyVector local_contractor_key_vector;
         ContractorKeyVectorMap global_contractor_key_vector_map;
@@ -79,7 +79,7 @@ public:
     { return mLocalContractorsPointer; }
 
     LocationMap & GlobalContractorsLocation()
-    { return mLocalContractorsPointer; }
+    { return mGlobalContractorsLocation; }
 
     ContractorPointer FindLocalContractorPointer( const ContractorKey key ) const
     {
@@ -100,7 +100,7 @@ public:
     }
 
 private:
-    const TCommunicatorType * const mpCommunicator;
+    TCommunicatorType * const mpCommunicator;
     TContractorKeyIssuerType mContractorKeyIssuer;
     ContractorPointerMap mLocalContractorsPointer;
     LocationMap mGlobalContractorsLocation;

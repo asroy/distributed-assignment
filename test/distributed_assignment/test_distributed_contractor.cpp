@@ -55,6 +55,7 @@ int main( int argc, char** argv )
     contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.GenerateGlobalContractorsLocation();
 
+    std::cout << "local contractors" << std::endl;
     for( const ContractorPointerPairType<SomeOne> & r_contractor_pointer_pair : contractor_manager.LocalContractorsPointer() )
     {
         const ContractorKey & r_contractor_key = r_contractor_pointer_pair.first;
@@ -65,6 +66,9 @@ int main( int argc, char** argv )
         printer.Print(r_contractor);
     }
 
+    std::cout << std::endl;
+
+    std::cout << "global contractors" << std::endl;
     for( const LocationPair & r_location_pair : contractor_manager.GlobalContractorsLocation() )
     {
         const ContractorKey & r_contractor_key = r_location_pair.first;

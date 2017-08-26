@@ -118,7 +118,7 @@ public:
     }
 
     template<typename TDataType>
-    void AllGather( TDataType & r_send_data, MapByLocationType<TDataType> & r_recv_datas, int mpi_tag )
+    void AllGather( const TDataType & r_send_data, MapByLocationType<TDataType> & r_recv_datas, int mpi_tag )
     {
         typedef PairByLocationType<DataUtility::Serializer> SerializerPair;
 

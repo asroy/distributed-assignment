@@ -9,14 +9,18 @@ namespace Communication
 class MpiLocation
 {
 public:
-    MpiLocation() = delete;
+    MpiLocation()
+    :   mMpiComm{MPI_COMM_NULL},
+        mMpiRank{-1},
+        mMpiSize{-1}
+    {}
 
     ~MpiLocation()
     {}
 
     static MpiLocation NoWhere()
     {
-        return MpiLocation{0, -1, -1};
+        return MpiLocation{MPI_COMM_NULL, -1, -1};
     }
 
     struct LessThanComparator
@@ -48,17 +52,39 @@ private:
     int MpiSize() const
     { return mMpiSize; }
 
-    void Printer( const DataUtility::DataPrinter & r_printer ) const
+    void Save( DataUtility::Serializer & r_serializer ) const
     {
-        char comm_name[MPI_MAX_OBJECT_NAME];
-        int comm_name_length;
+        r_serializer.Save(mMpiComm);
+        r_serializer.Save(mMpiRank);
+        r_serializer.Save(mMpiSize);
+    }
 
-        MPI_Comm_get_name(mMpiComm, comm_name, & comm_name_length);
+    void Load( DataUtility::Serializer & r_serializer )
+    {
+        r_serializer.Load(mMpiComm);
+        r_serializer.Load(mMpiRank);
+        r_serializer.Load(mMpiSize);
+    }
 
-        std::string comm_name_string;
-        comm_name_string.copy(comm_name, comm_name_length);
+    DataUtility::DataProfile Profile( DataUtility::DataProfile & r_profile ) const
+    {
+       return r_profile.MakeNonTrivial();
+    }
 
-        std::cout << "{MpiLocation: " << comm_name_string;
+    void Print( const DataUtility::DataPrinter & r_printer ) const
+    {
+        // char comm_name[MPI_MAX_OBJECT_NAME];
+        // int comm_name_length;
+
+        // MPI_Comm_get_name(mMpiComm, comm_name, & comm_name_length);
+
+        // std::string comm_name_string;
+        // comm_name_string.copy(comm_name, comm_name_length);
+
+        // std::cout << "{MpiLocation: " << comm_name_string;
+
+        std::cout << "{MpiLocation: ";
+        r_printer.Print(mMpiComm);
         r_printer.Print(mMpiRank);
         r_printer.Print(mMpiSize);
         std::cout << "}";
@@ -69,6 +95,8 @@ private:
     int mMpiSize;
 
     friend class MpiCommunicator;
+    friend class DataUtility::Serializer;
+    friend class DataUtility::DataProfile;
     friend class DataUtility::DataPrinter;
 };
 
