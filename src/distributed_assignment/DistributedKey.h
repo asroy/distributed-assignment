@@ -57,7 +57,7 @@ private:
 
     void Profile( DataUtility::DataProfile & r_profile ) const
     {
-        r_profile.MakeNonTrivial();
+        r_profile.SetIsTrivial(false);
     }
 
     void Print( const DataUtility::DataPrinter & r_printer ) const

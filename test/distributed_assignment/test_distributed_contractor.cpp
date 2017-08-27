@@ -43,7 +43,7 @@ int main( int argc, char** argv )
     std::cout << "rank " << mpi_rank << " PID "<< ::getpid() << std::endl;
 
     int dump;
-    std::cin >> dump;
+    if ( mpi_rank == 0 )  std::cin >> dump;
 
     SomeOne someone0;
 

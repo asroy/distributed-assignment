@@ -12,8 +12,8 @@ class DistributedContractorManager
 public:
     typedef typename TCommunicatorType::Location Location;
     typedef typename TContractorKeyIssuerType::Key ContractorKey;
-
-    typedef std::map<ContractorKey, TContractorType *, typename ContractorKey::LessThanComparator> ContractorPointerMap;
+    typedef TContractorType * ContractorPointer;
+    typedef std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ContractorPointerMap;
     typedef std::map<ContractorKey, Location, typename ContractorKey::LessThanComparator> LocationMap;
 
     template<typename TDataType>
@@ -83,7 +83,7 @@ public:
     const LocationMap & GlobalContractorsLocation() const
     { return mGlobalContractorsLocation; }
 
-    TContractorType * const FindLocalContractorPointer( const ContractorKey key ) const
+    ContractorPointer const FindLocalContractorPointer( const ContractorKey key ) const
     {
         typename ContractorPointerMap::iterator it = mLocalContractorsPointer.find(key);
         if( it == mLocalContractorsPointer.end() )
