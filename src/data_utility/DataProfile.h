@@ -5,10 +5,10 @@ namespace DataUtility
 {
 
 //profile basic type
-#define DATAPROFILE_PROFILE_BASIC_TYPE(TDATATYPE)                           \
-DataProfile Profile( const TDATATYPE & r_data ) const                       \
-{                                                                           \
-    return DataProfile::Default().MakeNonTrivial();                         \
+#define DATAPROFILE_PROFILE_BASIC_TYPE(TDATATYPE)     \
+void Profile( const TDATATYPE & r_data )              \
+{                                                     \
+    this->SetIsTrivial(false);                        \
 }
 
 class DataProfile
@@ -23,57 +23,6 @@ public:
     ~DataProfile()
     {}
 
-    static DataProfile Default()
-    {
-        return DataProfile{true, true, 0};
-    }
-
-    DataProfile MakeTrivial()
-    {
-        mIsTrivial = true;
-        return *this;
-    }
-
-    DataProfile MakeNonTrivial()
-    {
-        mIsTrivial = false;
-        return *this;
-    }
-
-    DataProfile MakeFromSender()
-    {
-        mIsFromSender = true;
-        return *this;
-    }
-
-    DataProfile MakeNotFromSender()
-    {
-        mIsFromSender = false;
-        return *this;
-    }
-
-    DataProfile SetBufferContentSize(const std::size_t buffer_size)
-    {
-        mBufferContentSize = buffer_size;
-        return *this;
-    }
-
-    std::size_t GetBufferContentSize()
-    {
-        if( mBufferContentSize < sizeof(Default()) )
-        {
-            std::cout<<__func__<<": mBufferContentSize too small! exit"<<std::endl;
-            exit(EXIT_FAILURE);
-        }
-        return mBufferContentSize;
-     }
-
-    bool IsFromSender()
-    { return mIsFromSender; }
-
-    bool IsTrivial()
-    { return mIsTrivial; }
-
     //profile basic data type
     DATAPROFILE_PROFILE_BASIC_TYPE(bool)
     DATAPROFILE_PROFILE_BASIC_TYPE(char)
@@ -86,27 +35,62 @@ public:
 
     //profile std::vector
     template<typename TDataType>
-    DataProfile Profile ( const std::vector<TDataType> & r_vector ) const
+    void Profile ( const std::vector<TDataType> & r_vector )
     {
-        DataProfile profile = DataProfile::Default();
-
         if( r_vector.size() == 0 )
-            profile.MakeTrivial();
+            this->SetIsTrivial(true);
         else
-            profile.MakeNonTrivial();
-
-        return profile;
+            this->SetIsTrivial(false);
     }
 
     //profile user defined data type
     template<typename TDataType>
-    DataProfile Profile ( const TDataType & r_data ) const
+    void Profile ( const TDataType & r_data )
     {
-        return r_data.Profile(*this);
+        r_data.Profile(*this);
     }
 
+    static DataProfile Default()
+    {
+        return DataProfile{true, true, 0};
+    }
+
+    DataProfile & SetIsTrivial( const bool is_trivial )
+    {
+        mIsTrivial = is_trivial;
+        return *this;
+    }
+
+    DataProfile & SetIsFromSender( const bool is_from_sender )
+    {
+        mIsFromSender = is_from_sender;
+        return *this;
+    }
+
+    DataProfile & SetBufferContentSize(const std::size_t buffer_size)
+    {
+        mBufferContentSize = buffer_size;
+        return *this;
+    }
+
+    bool GetIsTrivial() const
+    { return mIsTrivial; }
+
+    bool GetIsFromSender() const
+    { return mIsFromSender; }
+
+    std::size_t GetBufferContentSize() const
+    {
+        if( mBufferContentSize < sizeof(Default()) )
+        {
+            std::cout<<__func__<<": mBufferContentSize too small! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+        return mBufferContentSize;
+     }
+
 private:
-    DataProfile( const bool is_trivial, const bool is_from_sender, std::size_t buffer_content_size )
+    DataProfile( const bool is_trivial, const bool is_from_sender, const std::size_t buffer_content_size )
     :   mIsTrivial{is_trivial},
         mIsFromSender{is_from_sender},
         mBufferContentSize{buffer_content_size}

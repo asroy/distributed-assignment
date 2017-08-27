@@ -55,9 +55,9 @@ private:
         r_serializer.Load(mLocalKey);
     }
 
-    DataUtility::DataProfile Profile( DataUtility::DataProfile & r_profile ) const
+    void Profile( DataUtility::DataProfile & r_profile ) const
     {
-        return r_profile.MakeNonTrivial();
+        r_profile.MakeNonTrivial();
     }
 
     void Print( const DataUtility::DataPrinter & r_printer ) const

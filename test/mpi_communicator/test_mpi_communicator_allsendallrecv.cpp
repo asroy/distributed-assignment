@@ -32,8 +32,8 @@ int main( int argc, char** argv )
   Communication::MpiCommunicator communicator;
 
   //data containers
-  std::map<Location, DataVector, Location::LessThan> send_data_vector_map;
-  std::map<Location, DataVector, Location::LessThan> recv_data_vector_map;
+  std::map<Location, DataVector, Location::LessThanComparator> send_data_vector_map;
+  std::map<Location, DataVector, Location::LessThanComparator> recv_data_vector_map;
 
   // data to send
   for( int i = 0; i < mpi_size; i++ )
@@ -41,25 +41,31 @@ int main( int argc, char** argv )
     Location send_to_location = communicator.GetPeerLocation(i);
     DataVector & r_send_data_vector = send_data_vector_map[send_to_location];
 
-    for( int j = 0; j < 100; j++ )
+    for( int j = 0; j < mpi_rank+1; j++ )
       r_send_data_vector.push_back(a0);
   }
 
   //send recv
   communicator.AllSendAllRecv( send_data_vector_map, recv_data_vector_map, 0 );
 
+  std::cout << "recv size: " << recv_data_vector_map.size() << std::endl;
+
   //print recv
   for( const DataVectorPair & r_recv_data_vector_pair : recv_data_vector_map )
   {
-    Location recv_from_location = r_recv_data_vector_pair.first;
-    const DataVector & r_rev_data_vector = r_recv_data_vector_pair.second;
+      Location recv_from_location = r_recv_data_vector_pair.first;
+      const DataVector & r_rev_data_vector = r_recv_data_vector_pair.second;
 
-    std::cout<<"recv from rank "<<recv_from_location.MpiRank()<<std::endl;
-    std::cout<<"recv vector sizes: "<<r_rev_data_vector.size()<<std::endl;
+      DataUtility::DataPrinter printer;
 
-    DataUtility::DataPrinter data_printer;
-    data_printer.Print(recv_data_vector_map[recv_from_location]);
-    std::cout<<std::endl;
+      std::cout<<"recv from location ";
+      printer.Print(recv_from_location);
+      std::cout<<std::endl;
+
+      std::cout<<"recv vector sizes: "<<r_rev_data_vector.size()<<std::endl;
+
+      printer.Print(recv_data_vector_map[recv_from_location]);
+      std::cout<<std::endl;
   }
 
   std::cin >> dump;

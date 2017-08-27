@@ -69,13 +69,13 @@ public:
             DataUtility::Serializer & r_send_serializer = mSendSerializers[send_to_location];
 
             //save to serializers
-            r_send_serializer.ReserveSpaceForBufferHeader(DataUtility::DataProfile::Default());
+            r_send_serializer.WriteBufferHeader(DataUtility::DataProfile::Default());
             std::size_t send_size = r_send_serializer.FreshSave(r_send_data);
 
             //update header
             DataUtility::DataProfile send_data_profile;
-            send_data_profile.Profile(r_send_data).MakeFromSender();
-            send_data_profile.SetBufferContentSize(send_size);
+            send_data_profile.Profile(r_send_data);
+            send_data_profile.SetIsFromSender(true).SetBufferContentSize(send_size);
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }
 
@@ -92,20 +92,20 @@ public:
             r_recv_serializer.ReadBufferHeader(recv_data_profile);
 
             //check
-            if( ! recv_data_profile.IsFromSender() )
+            if( ! recv_data_profile.GetIsFromSender() )
             {
                 std::cout<<__func__<<": recv serializer exit, but not from sender! exit"<<std::endl;
                 exit(EXIT_FAILURE);
             }
 
             //check
-            if( recv_data_profile.IsTrivial() )
+            if( recv_data_profile.GetIsTrivial() )
             {
                 std::cout<<__func__<<": recv serializer exit, but buffer header is marked trivial! exit"<<std::endl;
                 exit(EXIT_FAILURE);
             }
 
-            if( recv_data_profile.IsFromSender() )
+            if( recv_data_profile.GetIsFromSender() )
             {
                 TDataType & r_recv_data = r_recv_datas[recv_location];//this will insert a entry into r_recv_datas map
                 r_recv_serializer.FreshLoad(r_recv_data);
@@ -136,13 +136,13 @@ public:
             DataUtility::Serializer & r_send_serializer = mSendSerializers[root_location];
 
             //save to serializer
-            r_send_serializer.ReserveSpaceForBufferHeader(DataUtility::DataProfile::Default());
+            r_send_serializer.WriteBufferHeader(DataUtility::DataProfile::Default());
             std::size_t send_size = r_send_serializer.FreshSave(r_send_data);
 
             //update header
             DataUtility::DataProfile send_data_profile;
-            send_data_profile.Profile(r_send_data).MakeFromSender();
-            send_data_profile.SetBufferContentSize(send_size);
+            send_data_profile.Profile(r_send_data);
+            send_data_profile.SetIsFromSender(true).SetBufferContentSize(send_size);
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }
 
@@ -159,20 +159,20 @@ public:
             r_recv_serializer.ReadBufferHeader(recv_data_profile);
 
             //check
-            if( ! recv_data_profile.IsFromSender() )
+            if( ! recv_data_profile.GetIsFromSender() )
             {
                 std::cout<<__func__<<": recv serializer exit, but not from sender! exit"<<std::endl;
                 exit(EXIT_FAILURE);
             }
 
             //check
-            if( recv_data_profile.IsTrivial() )
+            if( recv_data_profile.GetIsTrivial() )
             {
                 std::cout<<__func__<<": recv serializer exit, but buffer header is marked trivial! exit"<<std::endl;
                 exit(EXIT_FAILURE);
             }
 
-            if( recv_data_profile.IsFromSender() )
+            if( recv_data_profile.GetIsFromSender() )
             {
                 TDataType & r_recv_data = r_recv_datas[recv_location];//this will insert a entry into r_recv_datas map
                 r_recv_serializer.FreshLoad(r_recv_data);
@@ -217,7 +217,7 @@ private:
             int i = send_to_location.MpiRank();
             send_sizes[i] = send_data_profile.GetBufferContentSize();
 
-            if ( send_data_profile.IsTrivial() )//don't want to send trivial data
+            if ( send_data_profile.GetIsTrivial() )//don't want to send trivial data
                 send_sizes[i] = 0;
         }
 
@@ -232,8 +232,7 @@ private:
                 Location recv_from_location = GetPeerLocation(i);
                 DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];//this will insert new entry into map
                 r_recv_serializer.IncreaseBufferSize(recv_sizes[i]);
-                r_recv_serializer.ReserveSpaceForBufferHeader(DataUtility::DataProfile::Default());
-                r_recv_serializer.WriteBufferHeader( DataUtility::DataProfile::Default().MakeNotFromSender().MakeTrivial() );
+                r_recv_serializer.WriteBufferHeader(DataUtility::DataProfile::Default().SetIsFromSender(false).SetIsTrivial(true));
             }
         }
 
@@ -301,7 +300,7 @@ private:
 
         send_size = send_data_profile.GetBufferContentSize();
 
-        if ( send_data_profile.IsTrivial() )//don't want to send trivial data
+        if ( send_data_profile.GetIsTrivial() )//don't want to send trivial data
             send_size = 0;
 
         //
@@ -320,8 +319,7 @@ private:
                 DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];
 
                 r_recv_serializer.IncreaseBufferSize(recv_sizes[i]);
-                r_recv_serializer.ReserveSpaceForBufferHeader(DataUtility::DataProfile::Default());
-                r_recv_serializer.WriteBufferHeader( DataUtility::DataProfile::Default().MakeNotFromSender().MakeTrivial() );
+                r_recv_serializer.WriteBufferHeader( DataUtility::DataProfile::Default().SetIsFromSender(false).SetIsTrivial(true) );
             }
         }
 

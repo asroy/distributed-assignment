@@ -110,14 +110,6 @@ public:
     { return mpBuffer; }
 
     template<typename TBufferHeaderType>
-    void ReserveSpaceForBufferHeader(const TBufferHeaderType buffer_header)
-    {
-        std::size_t buffer_header_size = sizeof(buffer_header);
-        IncreaseBufferSize(buffer_header_size);
-        mBufferHead = buffer_header_size;
-    }
-
-    template<typename TBufferHeaderType>
     void ReadBufferHeader(TBufferHeaderType & buffer_header) const
     {
         if( mBufferSize < sizeof( buffer_header ) )
@@ -134,6 +126,7 @@ public:
     {
         std::size_t buffer_header_size = sizeof(buffer_header);
         IncreaseBufferSize(buffer_header_size);
+        mBufferHead = buffer_header_size;
         TBufferHeaderType* p = (TBufferHeaderType*) mpBuffer;
         *p = buffer_header;
     }

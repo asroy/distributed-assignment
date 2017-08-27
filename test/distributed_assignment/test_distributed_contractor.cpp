@@ -43,7 +43,7 @@ int main( int argc, char** argv )
     std::cout << "rank " << mpi_rank << " PID "<< ::getpid() << std::endl;
 
     int dump;
-    // std::cin >> dump;
+    std::cin >> dump;
 
     SomeOne someone0;
 
@@ -54,6 +54,9 @@ int main( int argc, char** argv )
     contractor_manager.ClearRegistratedContractor();
     contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.GenerateGlobalContractorsLocation();
+
+    std::cout << "global contractors, size:" << contractor_manager.GlobalContractorsLocation().size() << std::endl;
+
 
     std::cout << "local contractors" << std::endl;
     for( const ContractorPointerPairType<SomeOne> & r_contractor_pointer_pair : contractor_manager.LocalContractorsPointer() )
@@ -69,6 +72,7 @@ int main( int argc, char** argv )
     std::cout << std::endl;
 
     std::cout << "global contractors" << std::endl;
+
     for( const LocationPair & r_location_pair : contractor_manager.GlobalContractorsLocation() )
     {
         const ContractorKey & r_contractor_key = r_location_pair.first;

@@ -12,9 +12,8 @@ class DistributedContractorManager
 public:
     typedef typename TCommunicatorType::Location Location;
     typedef typename TContractorKeyIssuerType::Key ContractorKey;
-    typedef TContractorType * ContractorPointer;
 
-    typedef std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ContractorPointerMap;
+    typedef std::map<ContractorKey, TContractorType *, typename ContractorKey::LessThanComparator> ContractorPointerMap;
     typedef std::map<ContractorKey, Location, typename ContractorKey::LessThanComparator> LocationMap;
 
     template<typename TDataType>
@@ -62,6 +61,9 @@ public:
         //all gather
         mpCommunicator->AllGather( local_contractor_key_vector, global_contractor_key_vector_map, mpi_tag );
 
+        std::cout << __func__ << ": send vector size: " << local_contractor_key_vector.size()<<std::endl;
+        std::cout << __func__ << ": gather size: "<< global_contractor_key_vector_map.size()<<std::endl;
+
         //global contractors location
         mGlobalContractorsLocation.clear();
 
@@ -75,13 +77,13 @@ public:
         }
     }
 
-    ContractorPointerMap & LocalContractorsPointer()
+    const ContractorPointerMap & LocalContractorsPointer() const
     { return mLocalContractorsPointer; }
 
-    LocationMap & GlobalContractorsLocation()
+    const LocationMap & GlobalContractorsLocation() const
     { return mGlobalContractorsLocation; }
 
-    ContractorPointer FindLocalContractorPointer( const ContractorKey key ) const
+    TContractorType * const FindLocalContractorPointer( const ContractorKey key ) const
     {
         typename ContractorPointerMap::iterator it = mLocalContractorsPointer.find(key);
         if( it == mLocalContractorsPointer.end() )
