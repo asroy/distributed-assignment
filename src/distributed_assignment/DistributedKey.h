@@ -20,6 +20,25 @@ public:
     ~DistributedKey()
     {}
 
+    static DistributedKey NoKey()
+    {
+        DistributedKey no_key = { Location::NoWhere(), 0 };
+        return no_key;
+    }
+
+    bool operator == (const DistributedKey & other) const
+    {
+        if( mBirthPlace != other.mBirthPlace )
+            return false;
+        else if( mLocalKey != other.mLocalKey )
+            return false;
+        else
+            return true;
+    }
+
+    bool operator != (const DistributedKey & other) const
+    { return !( *this == other ); }
+
     struct LessThanComparator
     {
         bool operator() ( const DistributedKey & a, const DistributedKey & b ) const
@@ -65,7 +84,7 @@ private:
         std::cout << "{DistributedKey: ";
         r_printer.Print(mBirthPlace);
         r_printer.Print(mLocalKey);
-        std::cout << "}";
+        std::cout << "},";
     }
 
     Location mBirthPlace;

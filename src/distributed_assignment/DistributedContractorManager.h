@@ -36,9 +36,37 @@ public:
 
     void RegisterLocalContractor( TContractorType & r_contractor )
     {
-        ContractorKey key = mContractorKeyIssuer.IssueNewKey();
-        mLocalContractorsPointer[key] = & r_contractor;
-        r_contractor.SetKey(key);
+        const ContractorKey old_key = r_contractor.GetKey();
+
+        if( old_key != ContractorKey::NoKey() )
+        {
+            DataUtility::DataPrinter printer;
+
+            std::cout << __func__ << ": contractor ";
+
+            printer.Print(old_key);
+
+            std::cout <<"alreay has key! Do nothing" << std::endl;
+        }
+
+        const typename ContractorPointerMapByContractorKey::const_iterator it = mLocalContractorsPointer.find(old_key);
+
+        if ( it == mLocalContractorsPointer.end() )
+        {
+            ContractorKey new_key = mContractorKeyIssuer.IssueNewKey();
+            mLocalContractorsPointer[new_key] = & r_contractor;
+            r_contractor.SetKey(new_key);
+        }
+        else
+        {
+            DataUtility::DataPrinter printer;
+
+            std::cout << __func__ << ": contractor ";
+
+            printer.Print(old_key);
+
+            std::cout << "has already been registered locally! Do nothing" << std::endl;
+        }
     }
 
     void GenerateGlobalContractorsLocation( const int mpi_tag = 0 )

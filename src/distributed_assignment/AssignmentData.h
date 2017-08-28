@@ -56,7 +56,7 @@ private:
         r_printer.Print(mAssigneeKey);
         r_printer.Print(mAssignmentKey);
         r_printer.Print(mData);
-        std::cout << "}";
+        std::cout << "},";
     }
 
     TContractorKeyType mAssignorKey;

@@ -63,15 +63,18 @@ int main( int argc, char** argv )
     //communicator
     Communicator communicator(MPI_COMM_WORLD);
 
-    // contractor manager
+    //contractor manager
     ContractorManagerType<Contractor> contractor_manager(communicator);
 
     contractor_manager.ClearRegistratedContractors();
     contractor_manager.RegisterLocalContractor(someone0);
+    contractor_manager.RegisterLocalContractor(someone0);
+    contractor_manager.RegisterLocalContractor(someone0);
+    contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.GenerateGlobalContractorsLocation();
     contractor_manager.PrintAllContractors();
 
-    // assignment manager
+    //assignment manager
     ContractorManagerType<Contractor> & r_assignor_manager = contractor_manager;
     ContractorManagerType<Contractor> & r_assignee_manager = contractor_manager;
 

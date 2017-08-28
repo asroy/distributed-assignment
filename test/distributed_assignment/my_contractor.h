@@ -69,8 +69,8 @@ public:
     ~MyContractorA()
     {}
 
-    void SetKey(const TContractorKeyType r_contrator_key)
-    { mKey = r_contrator_key; }
+    void SetKey(const TContractorKeyType contrator_key)
+    { mKey = contrator_key; }
 
     TContractorKeyType GetKey() const
     { return mKey; }

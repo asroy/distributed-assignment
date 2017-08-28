@@ -18,24 +18,25 @@ public:
     ~MpiLocation()
     {}
 
-    bool IsNoWhere()
+    static MpiLocation NoWhere()
     {
-        MpiLocation no_where = NoWhere();
+        return MpiLocation{MPI_COMM_NULL, -1, -1};
+    }
 
-        if( mMpiComm != no_where.mMpiComm )
+    bool operator == (const MpiLocation & other) const
+    {
+        if( mMpiComm != other.mMpiComm )
             return false;
-        else if( mMpiRank != no_where.mMpiRank )
+        else if( mMpiRank != other.mMpiRank )
             return false;
-        else if( mMpiSize != no_where.mMpiSize )
+        else if( mMpiSize != other.mMpiSize )
             return false;
         else
             return true;
     }
 
-    static MpiLocation NoWhere()
-    {
-        return MpiLocation{MPI_COMM_NULL, -1, -1};
-    }
+    bool operator != (const MpiLocation & other) const
+    { return !( *this == other ); }
 
     struct LessThanComparator
     {
@@ -91,7 +92,7 @@ private:
         r_printer.Print(mMpiComm);
         r_printer.Print(mMpiRank);
         r_printer.Print(mMpiSize);
-        std::cout << "}";
+        std::cout << "},";
     }
 
     MPI_Comm mMpiComm;

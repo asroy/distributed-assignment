@@ -77,7 +77,7 @@ public:
 
         Location assignee_location = mpAssigneeManager->FindGlobalContractorLocation(assignee_key);
 
-        if( assignee_location.IsNoWhere() )
+        if( assignee_location == Location::NoWhere() )
         {
             std::cout<<__func__<<": cannot find assignee! exit"<<std::endl;
             exit(EXIT_FAILURE);
@@ -87,7 +87,6 @@ public:
 
         return assignment_key;
     }
-
 
     void PrintAllAssignments() const
     {
@@ -275,23 +274,23 @@ public:
         }
 
         //print
-        {
-            std::cout<<__func__<<std::endl;
+        // {
+        //     std::cout<<__func__<<std::endl;
 
-            DataUtility::DataPrinter printer;
+        //     DataUtility::DataPrinter printer;
 
-            std::cout<<": Assignee key: ";
-            printer.Print(assignee_key);
-            std::cout<<std::endl;
+        //     std::cout<<": Assignee key: ";
+        //     printer.Print(assignee_key);
+        //     std::cout<<std::endl;
 
-            std::cout<<": WorkUnit input vector: ";
-            printer.Print(r_input_vector);
-            std::cout<<std::endl;
+        //     std::cout<<": WorkUnit input vector: ";
+        //     printer.Print(r_input_vector);
+        //     std::cout<<std::endl;
 
-            std::cout<<": WorkUnit output vector: ";
-            printer.Print(r_output_vector);
-            std::cout<<std::endl;
-        }
+        //     std::cout<<": WorkUnit output vector: ";
+        //     printer.Print(r_output_vector);
+        //     std::cout<<std::endl;
+        // }
     }
 
     void GenerateAssigneeOuputs()//convert work unit output data to assignee output data
@@ -310,7 +309,7 @@ public:
                 ContractorKey assignor_key = r_output.mAssignorKey;
                 Location assignor_location = mpAssignorManager->FindGlobalContractorLocation(assignor_key);
 
-                if( assignor_location.IsNoWhere() )
+                if( assignor_location == Location::NoWhere() )
                 {
                     std::cout<<__func__<<": cannot find assignor! exit"<<std::endl;
                     exit(EXIT_FAILURE);
