@@ -102,7 +102,7 @@ public:
 
     void PrintAllContractors() const
     {
-        std::cout << __func__ << "local contractors: " << std::endl;
+        std::cout << __func__ << ": local contractors: " << std::endl;
 
         for( const std::pair<const ContractorKey, ContractorPointer> & r_contractor_pointer_pair : mLocalContractorsPointer )
         {
@@ -112,10 +112,11 @@ public:
             DataUtility::DataPrinter printer;
             printer.Print(r_contractor_key);
             printer.Print(r_contractor);
+
+            std::cout<<std::endl;
         }
 
-        std::cout << std::endl;
-        std::cout << __func__ << "global contractors: " << std::endl;
+        std::cout << __func__ << ": global contractors: " << std::endl;
 
         for( const std::pair<const ContractorKey, Location> & r_contractor_location_pair : mGlobalContractorsLocation )
         {
@@ -125,9 +126,9 @@ public:
             DataUtility::DataPrinter printer;
             printer.Print(r_contractor_key);
             printer.Print(r_location);
-        }
 
-        std::cout << std::endl;
+            std::cout<<std::endl;
+        }
     }
 
     const ContractorPointerMapByContractorKey & LocalContractorsPointer() const

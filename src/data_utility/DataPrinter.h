@@ -39,7 +39,7 @@ class DataPrinter
       for( const TDataType & r_data : r_vector )
       {
         Print(r_data);
-        std::cout<<","<<std::endl;
+        std::cout<<std::endl;
       }
 
       std::cout<<"}, "<<std::endl;
