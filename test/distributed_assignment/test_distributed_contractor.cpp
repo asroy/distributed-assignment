@@ -53,7 +53,7 @@ int main( int argc, char** argv )
 
     ContractorManagerType<ContractorA> contractor_manager(communicator);
 
-    contractor_manager.ClearRegistratedContractor();
+    contractor_manager.ClearRegistratedContractors();
     contractor_manager.RegisterLocalContractor(contractor_a);
     contractor_manager.GenerateGlobalContractorsLocation();
 

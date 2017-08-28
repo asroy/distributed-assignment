@@ -56,7 +56,7 @@ int main( int argc, char** argv )
     std::cout << "rank " << mpi_rank << " PID "<< ::getpid() << std::endl;
 
     int dump;
-    if ( mpi_rank == 0 )  std::cin >> dump;
+    // if ( mpi_rank == 0 )  std::cin >> dump;
 
     Contractor someone0;
 
@@ -72,7 +72,7 @@ int main( int argc, char** argv )
     contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.GenerateGlobalContractorsLocation();
-    contractor_manager.PrintAllContractors();
+    // contractor_manager.PrintAllContractors();
 
     //assignment manager
     ContractorManagerType<Contractor> & r_assignor_manager = contractor_manager;
@@ -88,10 +88,10 @@ int main( int argc, char** argv )
         {
             const ContractorKey assignee_key = r_assignee_location_pair.first;
 
-            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
-            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
-            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
-            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
+            for( int i = 0; i < 10; i++ )
+            {
+                assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
+            }
         }
     }
 
@@ -109,12 +109,12 @@ int main( int argc, char** argv )
 
     assignment_manager.GetResults( results );
 
-    std::cout<<__func__<<": Results: "<<std::endl;
-    DataUtility::DataPrinter printer;
-    printer.Print(results);
-    std::cout<<std::endl;
+    // std::cout<<__func__<<": Results: "<<std::endl;
+    // DataUtility::DataPrinter printer;
+    // printer.Print(results);
+    // std::cout<<std::endl;
 
-    std::cin >> dump;
+    // std::cin >> dump;
 
     MPI_Finalize();
 
