@@ -9,37 +9,43 @@
 #include"DistributedKeyIssuer.h"
 #include"DistributedContractorManager.h"
 #include"DistributedAssignmentManager.h"
+#include"AssignmentData.h"
 #include"my_contractor.h"
 
 namespace ForMainOnly
 {
 
-typedef Communication::MpiCommunicator Communicator;
-typedef typename Communicator::Location Location;
-typedef DistributedAssignment::DistributedKeyIssuer<Communicator> ContractorKeyIssuer;
-typedef typename ContractorKeyIssuer::Key ContractorKey;
+using Communicator = Communication::MpiCommunicator;
+using Location = typename Communicator::Location;
+using ContractorKeyIssuer = DistributedAssignment::DistributedKeyIssuer<Communicator>;
+using ContractorKey = typename ContractorKeyIssuer::Key ;
 
 template<typename TContractorType>
 using ContractorManagerType = DistributedAssignment::DistributedContractorManager<TContractorType, ContractorKeyIssuer, Communicator>;
 
-typedef std::pair<const ContractorKey, Location> LocationPair;
+using LocationPairByContractorKey = std::pair<const ContractorKey, Location> ;
 
 template<typename TContractorType>
 using ContractorPointerPairType = std::pair<const ContractorKey, TContractorType *>;
 
-typedef DistributedAssignment::DistributedKeyIssuer<Communicator> AssignmentKeyIssuer;
-typedef typename AssignmentKeyIssuer::Key AssignmentKey;
+using AssignmentKeyIssuer = DistributedAssignment::DistributedKeyIssuer<Communicator> ;
+using AssignmentKey = typename AssignmentKeyIssuer::Key ;
 
 template<typename TDataType>
-using AssignmentDataType = AssignmentData<ContractorKey,AssignmentKey,TDataType>;
+using AssignmentDataType = DistributedAssignment::AssignmentData<ContractorKey,AssignmentKey,TDataType>;
 
-typedef DataUtility::DataPrinter DataPrinter;
+template<typename TAssignorType, typename TAssigneeType, typename TInputType, typename TOutputType>
+using AssignmentManager = DistributedAssignment::DistributedAssignmentManager<TAssignorType,TAssigneeType,TInputType,TOutputType,Communicator,DistributedAssignment::DistributedKeyIssuer,DistributedAssignment::DistributedKeyIssuer> ;
+
+using DataPrinter =DataUtility::DataPrinter ;
 
 }
 
 int main( int argc, char** argv )
 {
     using namespace ForMainOnly;
+
+    using Contractor = MyContractorA<ContractorKey>;
 
     int mpi_rank, mpi_size;
 
@@ -52,10 +58,7 @@ int main( int argc, char** argv )
     int dump;
     if ( mpi_rank == 0 )  std::cin >> dump;
 
-    typedef SomeOne<ContractorKey> Contractor;
-    A a0;
     Contractor someone0;
-
 
     //communicator
     Communicator communicator(MPI_COMM_WORLD);
@@ -80,10 +83,10 @@ int main( int argc, char** argv )
 
     std::cout << std::endl;
     std::cout << "global contractors" << std::endl;
-    for( const LocationPair & r_location_pair : contractor_manager.GlobalContractorsLocation() )
+    for( const LocationPairByContractorKey & r_contractor_location_pair : contractor_manager.GlobalContractorsLocation() )
     {
-        const ContractorKey & r_contractor_key = r_location_pair.first;
-        const Location & r_location = r_location_pair.second;
+        const ContractorKey & r_contractor_key = r_contractor_location_pair.first;
+        const Location & r_location = r_contractor_location_pair.second;
 
         DataPrinter printer;
         printer.Print(r_contractor_key);
@@ -91,11 +94,10 @@ int main( int argc, char** argv )
     }
 
     // assignment manager
-    ContractorMangerType<Contractor> & r_assignor_manager = contractor_manager;
-    ContractorMangerType<Contractor> & r_assignee_manager = contractor_manager;
+    ContractorManagerType<Contractor> & r_assignor_manager = contractor_manager;
+    ContractorManagerType<Contractor> & r_assignee_manager = contractor_manager;
 
-
-    DistributedAssignmentManager assignment_manager<Contractor,Contractor,int,A,Communicator,ContractorKeyIssuer,AssignmentKeyIssuer> (communicator, r_assignor_manager, r_assignee_manager);
+    AssignmentManager<Contractor,Contractor,int,A>  assignment_manager(communicator, r_assignor_manager, r_assignee_manager);
 
     for( const ContractorPointerPairType<Contractor> & r_assignor_pointer_pair : r_assignor_manager.LocalContractorsPointer() )
     {
@@ -110,13 +112,13 @@ int main( int argc, char** argv )
     }
 
     //work
-    assignemnt_manager.ExecuteAllDistributedAssignments();
+    assignment_manager.ExecuteAllDistributedAssignments();
 
     // print results
-    typedef AssignmentDataType<A> AssignmentOutput;
-    std::vector<AssignmentOutput> AssignmentOutputVector;
+    using AssignmentOutput = AssignmentDataType<A> ;
+    using AssignmentOutputVector = std::vector<AssignmentOutput> ;
 
-    AssignmentOutput results;
+    AssignmentOutputVector results;
 
     assignment_manager.GetResults( results );
 

@@ -4,7 +4,7 @@ namespace DistributedAssignment
 {
 
 template<typename TContractorKeyType,
-         typename TAssignmentKeyType
+         typename TAssignmentKeyType,
          typename TDataType>
 struct AssignmentData
 {
