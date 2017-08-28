@@ -41,6 +41,7 @@ public:
     {
         ContractorKey key = mContractorKeyIssuer.IssueNewKey();
         mLocalContractorsPointer[key] = & r_contractor;
+        r_contractor.SetKey(key);
     }
 
     void GenerateGlobalContractorsLocation( const int mpi_tag = 0 )

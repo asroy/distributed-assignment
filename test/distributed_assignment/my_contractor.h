@@ -6,6 +6,7 @@ struct A
     int mNextRank;
 };
 
+template<typename TContractorKeyType>
 class SomeOne
 {
 public:
@@ -22,6 +23,12 @@ public:
 
     ~SomeOne()
     {}
+
+    void SetKey(const TContractorKeyType r_contrator_key)
+    { mKey = r_contrator_key; }
+
+    TContractorKeyType GetKey() const
+    { return mKey; }
 
     void Execute( int & r_step, A & r_next )
     {
@@ -55,6 +62,7 @@ private:
         std::cout << "}";
     }
 
+    TContractorKeyType mKey;
     int mSize;
     int mRank;
 

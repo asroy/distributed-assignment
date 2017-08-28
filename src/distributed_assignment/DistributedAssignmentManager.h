@@ -1,6 +1,5 @@
 #pragma once
 #include<iostream>
-#include"Contractor.h"
 #include"DistributedContractorManager.h"
 #include"AssignmentData.h"
 
@@ -8,23 +7,25 @@ namespace DistributedAssignment{
 
 template<typename TAssignorType,
          typename TAssigneeType,
-         typename TInputDataType,
-         typename TOutputDataType,
+         typename TInputType,
+         typename TOutputType,
          typename TCommunicatorType,
-         typename TContractorKeyType,
+         typename TDistributedContractorKeyIssuerType,
          typename TDistributedAssignmentKeyIssuerType>
 class DistributedAssignmentManager
 {
 public:
     typedef typename TCommunicatorType::Location Location;
+    typedef typename TDistributedContractorKeyIssuerType<TCommunicatorType> ContractorKeyIssuer;
+    typedef typename ContractorKeyIssuer::Key ContractorKey;
     typedef typename TDistributedAssignmentKeyIssuerType<TCommunicatorType> AssignmentKeyIssuer;
     typedef typename AssignmentKeyIssuer::Key AssignmentKey;
 
     template<typename TContractorType>
-    using ContractorManagerType = DistributedContractorManager<TContractorType,TContractorKeyIssuerType,TCommunicatorType>;
+    using ContractorManagerType = DistributedContractorManager<TContractorType,ContractorKeyIssuer,TCommunicatorType>;
 
     template<typename TDataType>
-    using AssignmentDataType = AssignmentData<TContractorKeyType,AssignmentKey,TDataType>;
+    using AssignmentDataType = AssignmentData<ContractorKey,AssignmentKey,TDataType>;
 
     template<typename TDataType>
     using AssignmentDataVectorType = std::vector<AssignmentDataType<TDataType>>;
@@ -32,8 +33,8 @@ public:
     template<typename TKeyType, typename TDataType>
     using AssignmentDataVectorMapType = std::map<TKeyType, AssignmentDataVectorType<TDataType>, typename TKeyType::LessThanComparator>;
 
-    typedef AssignmentDataVectorType<TInputDataType>  WorkUnitInputDataVector;
-    typedef AssignmentDataVectorType<TOutputDataType> WorkUnitOutputDataVector;
+    template<typename TKeyType, typename TDataType>
+    using AssignmentDataVectorPairType = std::pair<TKeyType,  AssignmentDataVectorType<TDataType>>;
 
     DistributedAssignmentManager() = delete();
 
@@ -58,19 +59,21 @@ public:
     {
         mAssignmentKeyIssuer.Clear();
 
-        mAssignorInputDatas.clear();
-        mAssigneeInputDatas.clear();
-        mWorkUnitInputDatas.clear();
-        mAssignorOutputDatas.clear();
-        mAssigneeOutputDatas.clear();
-        mWorkUnitOutputDatas.clear();
+        mAssignorInputs.clear();
+        mAssigneeInputs.clear();
+        mWorkUnitInputs.clear();
+        mAssignorOutputs.clear();
+        mAssigneeOutputs.clear();
+        mWorkUnitOutputs.clear();
     }
 
-    AssignmentKey AddAssignment( TContractorKeyType assignor_key, TContractorKeyType assignee_key, TInputDataType input_data )
+    AssignmentKey AddAssignment( const TContractorKeyType assignor_key, const TContractorKeyType assignee_key, const TInputType input_data )
     {
+        typedef AssignmentDataType<TInputType> AssignmentInput;
+
         AssignmentKey assignment_key = mAssignmentKeyIssuer.IssueNewKey();
 
-        AssignmentData assignment_data = { assignor_key, assignment_key, assignee_key, input_data };
+        AssignmentInput assignment_input = { assignor_key, assignment_key, assignee_key, input_data };
 
         Location assignee_location = mpAssigneeManager.ContactorLocation(assignee_key);
 
@@ -80,88 +83,147 @@ public:
             exit(EXIT_FAILURE);
         }
 
-        mAssignorInputDatas[assignee_location].push_back(assignment_data);
+        mAssignorInputs[assignee_location].push_back(assignment_data);
 
         return assignment_key;
     }
 
-    void DistributeAssignmentsInput( int mpi_tag = 0 )
+    void ExecuteAllDistributedAssignments()
     {
-        mpCommunicator->AllSendAllRecv( mAssignorInputDatas, mAssigneeInputDatas, mpi_tag );
+        typedef AssignmentDataVectorType<TInputType> InputVector;
+        typedef AssignmentDataVectorPairType<const ContractorKey, TInputType> InputVectorPairByContractorKey;
+
+        SendAssignorInputsToAssigneeInputs(0);
+
+        GenerateWorkUnitsInputs();
+
+        for( const InputVectorPairByContractorKey & r_input_vector_pair : mWorkUnitInputs )
+        {
+            const ContractorKey assignee_key = r_input_vector_pair.first;
+            ExecuteLocalWorkUnit(assignee_key);
+        }
+
+        SendAssigneeOutputsToAssignorOutputs(1);
     }
 
-    void GenerateWorkUnitsInputDatas()//convert assignee input data to work unit input data
+    void SendAssignorInputsToAssigneeInputs( const int mpi_tag = 0 )
     {
-        typedef AssignmentDataType<TInputDataType> Data;
-        typedef std::vector<Data> DataVector;
+        mpCommunicator->AllSendAllRecv( mAssignorInputs, mAssigneeInputs, mpi_tag );
+    }
 
-        mWorkUnitInputDatas.clear();
+    void GenerateWorkUnitsInputs()//convert assignee input data to work unit input data
+    {
+        typedef AssignmentDataType<TInputType> Input;
+        typedef AssignmentDataVectorType<TInputType> InputVector;
+        typedef AssignmentDataVectorPairType<const Location, TInputType> InputVectorPairByLocation;
 
-        for( const std::pair<Location, DataVector> & r_assignee_data_vector_pair : mAssigneeInputDatas )
+        mWorkUnitInputs.clear();
+
+        for( const InputVectorPairByLocation & r_assignee_input_vector_pair : mAssigneeInputs )
         {
-            const DataVector & r_assignee_data_vector = r_assignee_data_vector_pair.second;
-            for ( const Data & r_data : r_assignee_data_vector )
+            const InputVector & r_assignee_input_vector = r_assignee_input_vector_pair.second;
+            for ( const Input & r_assignee_input : r_assignee_input_vector )
             {
-                TContractorKeyType assignee_key = r_data.mAssigneeKey;
-                mWorkUnitInputDatas[assignee_key].push_back(r_data);
+                TContractorKeyType assignee_key = r_assignee_input.mAssigneeKey;
+                mWorkUnitInputs[assignee_key].push_back(r_assignee_input);
             }
         }
     }
 
-    void ProcessOneWorkUnit( const TContractorKeyType assignee_key, WorkUnitInputDataVector & r_work_unit_input_datas, WorkUniteOutputDataVector & r_work_unit_output_datas )
+    void ExecuteLocalWorkUnit( const TContractorKeyType assignee_key )
     {
-        int assignments_size = (int) r_work_unit_input_datas.size();
+        typedef AssignmentDataVectorType<TInputType> InputVector;
+        typedef AssignmentDataVectorType<TOuputDataType> OutputVector;
+
+        typedef AssignmentDataVectorMapType<ContractorKey, TInputType>  InputVectorMap;
+        typedef AssignmentDataVectorMapType<ContractorKey, TOutputType> OutputVectorMap;
+
+        typedef typename InputVectorMap::const_iterator InputVectorMapIterator;
+
+        InputVectorMapIterator it_work_unit_input_vector = mWorkUnitInputs.find(assignee_key);
+
+        if( it_work_unit_input_vector == mWorkUnitInputs.end() )
+        {
+            std::cout<<__func__<<": work unit inputs not found! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        InputVector & r_work_unit_input_vector = *it_work_unit_input_vector;
+        OutputVector & r_work_unit_output_vector = mWorkUnitOutputs[assignee_key];
+
+        int num_assignment = (int) r_work_unit_input_vector.size();
 
         //clear work unit output datas
-        r_work_unit_output_datas.clear();
-        r_work_unit_output_datas.reserve(assignments_size);
+        r_work_unit_output_vector.clear();
+        r_work_unit_output_vector.reserve(num_assignment);
 
-        std::vector<TInputDataType>  inputs(assignments_size);
-        std::vector<TOutputDataType> outputs(assignments_size);
+        std::vector<TInputType>  inputs(num_assignment);
+        std::vector<TOutputType> outputs(num_assignment);
 
-        for ( int i == 0; i < assignments_size; i++ )
-        {
-            inputs[i] = r_work_unit_input_datas[i].mData;
-        }
+        for ( int i = 0; i < num_assignment; i++ )
+            inputs[i] = r_work_unit_input_vector[i].mData;
 
         //process
-        TAssigneeType & r_assignee = mpAssigneeManager->LocalContractor(assignee_key);
-        r_assignee.Execute(inputs, outputs);
-
-        for ( int i == 0; i < assignments_size; i++ )
+        TAssigneeType * p_assignee = mpAssigneeManager->FindLocalContractorPointer(assignee_key);
+        if( p_assignee == nullptr ) then
         {
-            r_work_unit_output_datas[i].mAssignorKey   = r_work_unit_input_datas[i].mAssignorKey
-            r_work_unit_output_datas[i].mAssignmentKey = r_work_unit_input_datas[i].mAssignmentKey
-            r_work_unit_output_datas[i].mAssigneeKey   = r_work_unit_input_datas[i].mAssigneeKey
-            r_work_unit_output_datas[i].mData = outputs[i];
+            std::cout <<__func__<<"local contractor not found! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        p_assignee->Execute(inputs, outputs);
+
+        for ( int i == 0; i < num_assignment; i++ )
+        {
+            r_work_unit_output_vector[i].mAssignorKey   = r_work_unit_input_vector[i].mAssignorKey
+            r_work_unit_output_vector[i].mAssignmentKey = r_work_unit_input_vector[i].mAssignmentKey
+            r_work_unit_output_vector[i].mAssigneeKey   = r_work_unit_input_vector[i].mAssigneeKey
+            r_work_unit_output_vector[i].mData = outputs[i];
         }
     }
 
-    void GenerateAssigneeOuputDatas()//convert assignee input data to work unit input data
+    void GenerateAssigneeOuputs()//convert work unit output data to assignee output data
     {
-        typedef AssignmentDataType<TOutputDataType> Data;
-        typedef std::vector<Data> DataVector;
+        typedef AssignmentDataType<TOutputType> Output;
+        typedef AssignmentDataVectorType<TOutputType> OutputVector;
+        typedef AssignmentDataVectorPairType<const TContractorKeyType, TOutputType> OutputVectorPairByContractorKey;
 
-        mAssigneeOutputDatas.clear();
+        mAssigneeOutputs.clear();
 
-        for( const std::pair<TContractorKeyType, DataVector> & r_work_unit_data_vector_pair : mWorkUnitOutputDatas )
+        for( OutputVectorPairByContractorKey & r_work_unit_output_vector_pair : mWorkUnitOutputs )
         {
-            const DataVector & r_work_unit_data_vector = r_work_unit_data_vector_pair.second;
-            for ( const Data & r_data : r_work_unit_data_vector )
+            const OutputVector & r_work_unit_output_vector = r_work_unit_output_vector_pair.second;
+            for ( const Output & r_output : r_work_unit_output_vector )
             {
-                TContractorKeyType assignor_key = r_data.mAssignorKey;
+                TContractorKeyType assignor_key = r_output.mAssignorKey;
                 Location assignor_location = mpAssignor->ContractorLocation(assignor_key);
-                mAssigneeOutputDatas[assignor_location].push_back(r_data);
+                mAssigneeOutputs[assignor_location].push_back(r_output);
             }
         }
     }
 
-    void DistributeAssignmentsOutput( int mpi_tag = 0 )
+    void SendAssigneeOutputsToAssignorOutputs( const int mpi_tag = 0 )
     {
-        mpCommunicator->AllSendAllRecv( mAssigneeOutputDatas, mAssignorOutputDatas );
+        mpCommunicator->AllSendAllRecv( mAssigneeOutputs, mAssignorOutputs, mpi_tag );
     }
 
-    TOutputDataType GetResult( TContractorKeyType assignor_key, AssignmentKey assignment_key );
+    void GetResults( std::vector<AssignmentDataType<TOutputType>> & r_result_vector ) const
+    {
+        typedef AssingmentDataType<TOutputType> Output;
+        typedef AssignmentDataVectorType<TOutputType> OutputVector;
+        typedef AssignmentDataVectorPairType<const Location, TOutputType> OutputVectorPairByLocation;
+
+        r_result_vector.clear();
+
+        for( const OutputVectorPairByLocation & r_assignor_output_vector_pair : mAssignorOutputs )
+        {
+            const OutputVector & r_assignor_output_vector = r_assignor_output_vector_pair.second;
+            for( const Output & r_output : r_assignor_output_vector )
+            {
+                r_result_vector.push_back(r_output);
+            }
+        }
+    }
 
 private:
     TCommunicatorType * mpCommunicator;
@@ -171,13 +233,13 @@ private:
 
     AssignmentKeyIssuer mAssignmentKeyIssuer;
 
-    AssignmentDataVectorMapType<Location,           TInputDataType> mAssignorInputDatas;
-    AssignmentDataVectorMapType<Location,           TInputDataType> mAssigneeInputDatas;
-    AssignmentDataVectorMapType<TContractorKeyType, TInputDataType> mWorkUnitInputDatas;
+    AssignmentDataVectorMapType<Location,           TInputType> mAssignorInputs;
+    AssignmentDataVectorMapType<Location,           TInputType> mAssigneeInputs;
+    AssignmentDataVectorMapType<TContractorKeyType, TInputType> mWorkUnitInputs;
 
-    AssignmentDataVectorMapType<Location,           TOutputDataType> mAssignorOutputDatas;
-    AssignmentDataVectorMapType<Location,           TOutputDataType> mAssigneeOutputDatas;
-    AssignmentDataVectorMapType<TContractorKeyType, TOutputDataType> mWorkUnitOutputDatas;
+    AssignmentDataVectorMapType<Location,           TOutputType> mAssignorOutputs;
+    AssignmentDataVectorMapType<Location,           TOutputType> mAssigneeOutputs;
+    AssignmentDataVectorMapType<TContractorKeyType, TOutputType> mWorkUnitOutputs;
 };
 
 }

@@ -27,6 +27,12 @@ typedef std::pair<const ContractorKey, Location> LocationPair;
 template<typename TContractorType>
 using ContractorPointerPairType = std::pair<const ContractorKey, TContractorType *>;
 
+typedef DistributedAssignment::DistributedKeyIssuer<Communicator> AssignmentKeyIssuer;
+typedef typename AssignmentKeyIssuer::Key AssignmentKey;
+
+template<typename TDataType>
+using AssignmentDataType = AssignmentData<ContractorKey,AssignmentKey,TDataType>;
+
 typedef DataUtility::DataPrinter DataPrinter;
 
 }
@@ -46,24 +52,26 @@ int main( int argc, char** argv )
     int dump;
     if ( mpi_rank == 0 )  std::cin >> dump;
 
+    typedef SomeOne<ContractorKey> Contractor;
     A a0;
-    SomeOne someone0;
+    Contractor someone0;
+
 
     //communicator
     Communicator communicator(MPI_COMM_WORLD);
 
     // contractor manager
-    ContractorManagerType<SomeOne> contractor_manager(communicator);
+    ContractorManagerType<Contractor> contractor_manager(communicator);
 
     contractor_manager.ClearRegistratedContractor();
     contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.GenerateGlobalContractorsLocation();
 
     std::cout << "local contractors" << std::endl;
-    for( const ContractorPointerPairType<SomeOne> & r_contractor_pointer_pair : contractor_manager.LocalContractorsPointer() )
+    for( const ContractorPointerPairType<Contractor> & r_contractor_pointer_pair : contractor_manager.LocalContractorsPointer() )
     {
         const ContractorKey & r_contractor_key = r_contractor_pointer_pair.first;
-        const SomeOne & r_contractor = *(r_contractor_pointer_pair.second);
+        const Contractor & r_contractor = *(r_contractor_pointer_pair.second);
 
         DataPrinter printer;
         printer.Print(r_contractor_key);
@@ -83,20 +91,38 @@ int main( int argc, char** argv )
     }
 
     // assignment manager
-    DistributedAssignmentManager assignment_manager<SomeOne,SomeOne,int,A,MpiCommunicator,DistributedKeyIssuer,DistributedKeyIssuer> (communicator, contractor_manager, contractor_manager);
+    ContractorMangerType<Contractor> & r_assignor_manager = contractor_manager;
+    ContractorMangerType<Contractor> & r_assignee_manager = contractor_manager;
 
-    for( const ContractorPointerPairByContractorKey & r_contractor_pointer_pair : contractor_manager.LocalContractorsPointer() )
+
+    DistributedAssignmentManager assignment_manager<Contractor,Contractor,int,A,Communicator,ContractorKeyIssuer,AssignmentKeyIssuer> (communicator, r_assignor_manager, r_assignee_manager);
+
+    for( const ContractorPointerPairType<Contractor> & r_assignor_pointer_pair : r_assignor_manager.LocalContractorsPointer() )
     {
-        const ContractorKey & r_assignor_key = r_contractor_pointer_pair.first;
+        const ContractorKey assignor_key = r_assignor_pointer_pair.first;
 
-        for( const LocationPairByContractorKey & r_contractor_location_pair : contractor_manager.GlobalContractorsLocation() )
+        for( const LocationPairByContractorKey & r_assignee_location_pair : r_assignee_manager.GlobalContractorsLocation() )
         {
-            const ContractorKey & r_assignee_key = r_contractor_location_pair.first;
+            const ContractorKey assignee_key = r_assignee_location_pair.first;
 
-            assignment_manager.AddAssignment(r_assignor_key, r_assignee_key, 1);
+            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
         }
     }
 
+    //work
+    assignemnt_manager.ExecuteAllDistributedAssignments();
+
+    // print results
+    typedef AssignmentDataType<A> AssignmentOutput;
+    std::vector<AssignmentOutput> AssignmentOutputVector;
+
+    AssignmentOutput results;
+
+    assignment_manager.GetResults( results );
+
+    DataUtility::DataPrinter printer;
+
+    printer.Print(results);
 
     std::cin >> dump;
 
