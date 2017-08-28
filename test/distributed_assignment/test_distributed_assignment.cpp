@@ -66,32 +66,10 @@ int main( int argc, char** argv )
     // contractor manager
     ContractorManagerType<Contractor> contractor_manager(communicator);
 
-    contractor_manager.ClearRegistratedContractor();
+    contractor_manager.ClearRegistratedContractors();
     contractor_manager.RegisterLocalContractor(someone0);
     contractor_manager.GenerateGlobalContractorsLocation();
-
-    std::cout << "local contractors" << std::endl;
-    for( const ContractorPointerPairType<Contractor> & r_contractor_pointer_pair : contractor_manager.LocalContractorsPointer() )
-    {
-        const ContractorKey & r_contractor_key = r_contractor_pointer_pair.first;
-        const Contractor & r_contractor = *(r_contractor_pointer_pair.second);
-
-        DataPrinter printer;
-        printer.Print(r_contractor_key);
-        printer.Print(r_contractor);
-    }
-
-    std::cout << std::endl;
-    std::cout << "global contractors" << std::endl;
-    for( const LocationPairByContractorKey & r_contractor_location_pair : contractor_manager.GlobalContractorsLocation() )
-    {
-        const ContractorKey & r_contractor_key = r_contractor_location_pair.first;
-        const Location & r_location = r_contractor_location_pair.second;
-
-        DataPrinter printer;
-        printer.Print(r_contractor_key);
-        printer.Print(r_location);
-    }
+    contractor_manager.PrintAllContractors();
 
     // assignment manager
     ContractorManagerType<Contractor> & r_assignor_manager = contractor_manager;
@@ -108,11 +86,17 @@ int main( int argc, char** argv )
             const ContractorKey assignee_key = r_assignee_location_pair.first;
 
             assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
+            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
+            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
+            assignment_manager.AddAssignment(assignor_key, assignee_key, 1);
         }
     }
 
     //work
     assignment_manager.ExecuteAllDistributedAssignments();
+
+    // assignment_manager.PrintAllAssignments();
+
 
     // print results
     using AssignmentOutput = AssignmentDataType<A> ;
@@ -122,9 +106,10 @@ int main( int argc, char** argv )
 
     assignment_manager.GetResults( results );
 
+    std::cout<<__func__<<": Results: "<<std::endl;
     DataUtility::DataPrinter printer;
-
     printer.Print(results);
+    std::cout<<std::endl;
 
     std::cin >> dump;
 

@@ -18,6 +18,20 @@ public:
     ~MpiLocation()
     {}
 
+    bool IsNoWhere()
+    {
+        MpiLocation no_where = NoWhere();
+
+        if( mMpiComm != no_where.mMpiComm )
+            return false;
+        else if( mMpiRank != no_where.mMpiRank )
+            return false;
+        else if( mMpiSize != no_where.mMpiSize )
+            return false;
+        else
+            return true;
+    }
+
     static MpiLocation NoWhere()
     {
         return MpiLocation{MPI_COMM_NULL, -1, -1};
@@ -73,16 +87,6 @@ private:
 
     void Print( const DataUtility::DataPrinter & r_printer ) const
     {
-        // char comm_name[MPI_MAX_OBJECT_NAME];
-        // int comm_name_length;
-
-        // MPI_Comm_get_name(mMpiComm, comm_name, & comm_name_length);
-
-        // std::string comm_name_string;
-        // comm_name_string.copy(comm_name, comm_name_length);
-
-        // std::cout << "{MpiLocation: " << comm_name_string;
-
         std::cout << "{MpiLocation: ";
         r_printer.Print(mMpiComm);
         r_printer.Print(mMpiRank);

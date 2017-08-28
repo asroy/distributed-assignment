@@ -28,7 +28,7 @@ public:
     ~DistributedContractorManager()
     {}
 
-    void ClearRegistratedContractor()
+    void ClearRegistratedContractors()
     {
         mLocalContractorsPointer.clear();
         mGlobalContractorsLocation.clear();
@@ -50,7 +50,7 @@ public:
         ContractorKeyVectorMapByLocation global_contractor_key_vector_map;
 
         //local contractors
-        for( const std::pair<ContractorKey, ContractorPointer> & r_local_contractor_pointer_pair : mLocalContractorsPointer )
+        for( std::pair<const ContractorKey, ContractorPointer> & r_local_contractor_pointer_pair : mLocalContractorsPointer )
         {
             ContractorKey local_contractor_key = r_local_contractor_pointer_pair.first;
             local_contractor_key_vector.push_back(local_contractor_key);
@@ -62,7 +62,7 @@ public:
         //global contractors location
         mGlobalContractorsLocation.clear();
 
-        for( const std::pair<Location, ContractorKeyVector> & r_global_contractor_key_vector_pair : global_contractor_key_vector_map )
+        for( std::pair<const Location, ContractorKeyVector> & r_global_contractor_key_vector_pair : global_contractor_key_vector_map )
         {
             Location location = r_global_contractor_key_vector_pair.first;
             ContractorKeyVector r_global_contractor_key_vector = r_global_contractor_key_vector_pair.second;
@@ -76,7 +76,7 @@ public:
     {
         std::cout << __func__ << "local contractors: " << std::endl;
 
-        for( const std::pair<ContractorKey, ContractorPointer> & r_contractor_pointer_pair : mLocalContractorsPointer )
+        for( const std::pair<const ContractorKey, ContractorPointer> & r_contractor_pointer_pair : mLocalContractorsPointer )
         {
             const ContractorKey & r_contractor_key = r_contractor_pointer_pair.first;
             const TContractorType & r_contractor = *(r_contractor_pointer_pair.second);
@@ -89,7 +89,7 @@ public:
         std::cout << std::endl;
         std::cout << __func__ << "global contractors: " << std::endl;
 
-        for( const std::pair<ContractorKey, Location> & r_contractor_location_pair : mGlobalContractorsLocation )
+        for( const std::pair<const ContractorKey, Location> & r_contractor_location_pair : mGlobalContractorsLocation )
         {
             const ContractorKey & r_contractor_key = r_contractor_location_pair.first;
             const Location & r_location = r_contractor_location_pair.second;
@@ -98,6 +98,8 @@ public:
             printer.Print(r_contractor_key);
             printer.Print(r_location);
         }
+
+        std::cout << std::endl;
     }
 
     const ContractorPointerMapByContractorKey & LocalContractorsPointer() const
@@ -108,18 +110,18 @@ public:
 
     ContractorPointer const FindLocalContractorPointer( const ContractorKey key ) const
     {
-        typename ContractorPointerMapByContractorKey::iterator it = mLocalContractorsPointer.find(key);
+        typename ContractorPointerMapByContractorKey::const_iterator it = mLocalContractorsPointer.find(key);
         if( it == mLocalContractorsPointer.end() )
             return nullptr;
         else
             return it->second;
     }
 
-    Location ContactorLocation( const ContractorKey key ) const
+    Location FindGlobalContractorLocation( const ContractorKey key ) const
     {
-        typename LocationMapByContractorKey::iterator it = mGlobalContractorsLocation.find(key);
+        typename LocationMapByContractorKey::const_iterator it = mGlobalContractorsLocation.find(key);
         if( it == mGlobalContractorsLocation.end() )
-            return Location::Nowhere();
+            return Location::NoWhere();
         else
             return it->second;
     }

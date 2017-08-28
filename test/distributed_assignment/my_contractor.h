@@ -2,8 +2,53 @@
 
 struct A
 {
+public:
+    A()
+    :   mThisRank{-1},
+        mNextRank{-1}
+    {}
+
+    A( const int this_rank, const int next_rank )
+    :   mThisRank{this_rank},
+        mNextRank{next_rank}
+    {}
+
+    ~A()
+    {}
+
+private:
+
+    void Save( DataUtility::Serializer & r_serializer ) const
+    {
+        r_serializer.Save(mThisRank);
+        r_serializer.Save(mNextRank);
+    }
+
+    void Load( DataUtility::Serializer & r_serializer )
+    {
+        r_serializer.Load(mThisRank);
+        r_serializer.Load(mNextRank);
+    }
+
+    void Profile( DataUtility::DataProfile & r_profile ) const
+    {
+        r_profile.SetIsTrivial(false);
+    }
+
+    void Print( const DataUtility::DataPrinter & r_printer ) const
+    {
+        std::cout << "{A: ";
+        r_printer.Print(mThisRank);
+        r_printer.Print(mNextRank);
+        std::cout << "}";
+    }
+
     int mThisRank;
     int mNextRank;
+
+    friend class DataUtility::Serializer;
+    friend class DataUtility::DataProfile;
+    friend class DataUtility::DataPrinter;
 };
 
 template<typename TContractorKeyType>
@@ -30,12 +75,13 @@ public:
     TContractorKeyType GetKey() const
     { return mKey; }
 
-    void Execute( int & r_step, A & r_next )
+    void Execute( const int & r_step, A & r_next )
     {
         int next_rank = mRank + r_step;
         next_rank = next_rank - (next_rank/mSize)*mSize;
 
-        r_next = { mRank, next_rank};
+        // r_next = { mRank, next_rank};
+        r_next = { mRank, mRank };
     }
 
     void Execute( std::vector<int> & r_inputs, std::vector<A> & r_outputs )
