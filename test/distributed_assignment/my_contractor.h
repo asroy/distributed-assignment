@@ -7,10 +7,10 @@ struct A
 };
 
 template<typename TContractorKeyType>
-class SomeOne
+class MyContractorA
 {
 public:
-    SomeOne()
+    MyContractorA()
     :   mSize{0},
         mRank{0}
     {
@@ -21,7 +21,7 @@ public:
         mRank = mpi_rank;
     }
 
-    ~SomeOne()
+    ~MyContractorA()
     {}
 
     void SetKey(const TContractorKeyType r_contrator_key)
@@ -56,7 +56,7 @@ public:
 private:
     void Print( const DataUtility::DataPrinter & r_printer ) const
     {
-        std::cout << "{SomeOne: ";
+        std::cout << "{MyContractorA: ";
         r_printer.Print(mSize);
         r_printer.Print(mRank);
         std::cout << "}";
