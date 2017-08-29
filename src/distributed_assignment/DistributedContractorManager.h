@@ -1,5 +1,8 @@
 #pragma once
 #include<iostream>
+#include<vector>
+#include<map>
+#include<set>
 
 namespace DistributedAssignment
 {
@@ -13,6 +16,8 @@ public:
     using Location = typename TCommunicatorType::Location ;
     using ContractorKeyIssuer = TDistributedContractorKeyIssuerType<Location> ;
     using ContractorKey = typename ContractorKeyIssuer::Key ;
+    using ContractorKeyVector = std::vector<ContractorKey> ;
+    using ContractorKeySet = std::set<ContractorKey, typename ContractorKey::LessThanComparator> ;
     using ContractorPointer = TContractorType * ;
     using ContractorPointerMapByContractorKey = std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ;
     using LocationMapByContractorKey = std::map<ContractorKey, Location, typename ContractorKey::LessThanComparator> ;
@@ -22,6 +27,8 @@ public:
     DistributedContractorManager( TCommunicatorType & communicator )
     :   mpCommunicator{& communicator},
         mContractorKeyIssuer(),
+        mLocalContractorsKey(),
+        mGlobalContractorsKey(),
         mLocalContractorsPointer(),
         mGlobalContractorsLocation()
     {}
@@ -29,8 +36,10 @@ public:
     ~DistributedContractorManager()
     {}
 
-    void ClearRegistratedContractors()
+    void ClearContractorsRegistry()
     {
+        mLocalContractorsKey.clear();
+        mGlobalContractorsKey.clear();
         mLocalContractorsPointer.clear();
         mGlobalContractorsLocation.clear();
     }
@@ -55,8 +64,9 @@ public:
         if ( it == mLocalContractorsPointer.end() )
         {
             ContractorKey new_key = mContractorKeyIssuer.IssueNewKey();
-            mLocalContractorsPointer[new_key] = & r_contractor;
             r_contractor.SetKey(new_key);
+            mLocalContractorsPointer[new_key] = & r_contractor;
+            mLocalContractorsKey.insert(new_key);
         }
         else
         {
@@ -70,9 +80,8 @@ public:
         }
     }
 
-    void GenerateGlobalContractorsLocation( const int mpi_tag = 0 )
+    void GenerateGlobalContractorsRegistry( const int mpi_tag = 0 )
     {
-        using ContractorKeyVector = std::vector<ContractorKey> ;
         using ContractorKeyVectorMapByLocation = std::map<Location, ContractorKeyVector, typename Location::LessThanComparator> ;
 
         ContractorKeyVector local_contractor_key_vector;
@@ -88,8 +97,10 @@ public:
         //all gather
         mpCommunicator->AllGather( local_contractor_key_vector, global_contractor_key_vector_map, mpi_tag );
 
-        //global contractors location
+        //global contractor key to location map
+        //global contractor key vector
         mGlobalContractorsLocation.clear();
+        mGlobalContractorsKey.clear();
 
         for( std::pair<const Location, ContractorKeyVector> & r_global_contractor_key_vector_pair : global_contractor_key_vector_map )
         {
@@ -97,7 +108,10 @@ public:
             ContractorKeyVector r_global_contractor_key_vector = r_global_contractor_key_vector_pair.second;
 
             for ( const ContractorKey & r_global_contractor_key : r_global_contractor_key_vector )
+            {
                 mGlobalContractorsLocation[r_global_contractor_key] = location;
+                mGlobalContractorsKey.insert(r_global_contractor_key);
+            }
         }
     }
 
@@ -132,6 +146,12 @@ public:
         }
     }
 
+    const ContractorKeySet & LocalContractorsKey() const
+    { return mLocalContractorsKey; }
+
+    const ContractorKeySet & GlobalContractorsKey() const
+    { return mGlobalContractorsKey; }
+
     const ContractorPointerMapByContractorKey & LocalContractorsPointer() const
     { return mLocalContractorsPointer; }
 
@@ -159,6 +179,10 @@ public:
 private:
     TCommunicatorType * const mpCommunicator;
     ContractorKeyIssuer mContractorKeyIssuer;
+
+    ContractorKeySet mLocalContractorsKey;
+    ContractorKeySet mGlobalContractorsKey;
+
     ContractorPointerMapByContractorKey mLocalContractorsPointer;
     LocationMapByContractorKey mGlobalContractorsLocation;
 };

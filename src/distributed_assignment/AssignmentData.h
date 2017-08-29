@@ -16,6 +16,9 @@ public:
         mData()
     {}
 
+    TDataType GetData() const
+    { return mData; }
+
 private:
     AssignmentData
     (   const TContractorKeyType & r_assignor_key,

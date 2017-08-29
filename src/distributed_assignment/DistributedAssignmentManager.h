@@ -1,5 +1,7 @@
 #pragma once
 #include<iostream>
+#include<vector>
+#include<map>
 #include"DistributedContractorManager.h"
 #include"AssignmentData.h"
 
@@ -86,100 +88,6 @@ public:
         mAssignorInputs[assignee_location].push_back(assignment_input);
 
         return assignment_key;
-    }
-
-    void PrintAllAssignments() const
-    {
-        std::cout << __func__ << ": Assignor input vector map: " << std::endl;
-
-        for( const AssignmentDataVectorPairType<Location, TInputType> & r_assignor_input_vector_pair : mAssignorInputs )
-        {
-            const Location & r_location = r_assignor_input_vector_pair.first;
-            const AssignmentDataVectorType<TInputType> & r_assignor_input_vector = r_assignor_input_vector_pair.second;
-
-            DataUtility::DataPrinter printer;
-            std::cout<<"Location: ";
-            printer.Print(r_location);
-            std::cout<<"Assignor input vector: ";
-            printer.Print(r_assignor_input_vector);
-        }
-
-        std::cout << std::endl;
-        std::cout << __func__ << ": Assignee input vector map: " << std::endl;
-
-        for( const AssignmentDataVectorPairType<Location, TInputType> & r_assignee_input_vector_pair : mAssigneeInputs )
-        {
-            const Location & r_location = r_assignee_input_vector_pair.first;
-            const AssignmentDataVectorType<TInputType> & r_assignee_input_vector = r_assignee_input_vector_pair.second;
-
-            DataUtility::DataPrinter printer;
-            std::cout<<"Location: ";
-            printer.Print(r_location);
-            std::cout<<"Assignee input vector: ";
-            printer.Print(r_assignee_input_vector);
-        }
-
-        std::cout << std::endl;
-        std::cout << __func__ << ": Work Unit input vector map: " << std::endl;
-
-        for( const AssignmentDataVectorPairType<ContractorKey, TInputType> & r_work_unit_input_vector_pair : mWorkUnitInputs )
-        {
-            const ContractorKey & r_assignee_key = r_work_unit_input_vector_pair.first;
-            const AssignmentDataVectorType<TInputType> & r_work_unit_input_vector = r_work_unit_input_vector_pair.second;
-
-            DataUtility::DataPrinter printer;
-            std::cout<<"Assignee Key: ";
-            printer.Print(r_assignee_key);
-            std::cout<<"Assignee input vector: ";
-            printer.Print(r_work_unit_input_vector);
-        }
-
-        std::cout << std::endl;
-        std::cout << __func__ << ": Work Unit output vector map: " << std::endl;
-
-        for( const AssignmentDataVectorPairType<ContractorKey, TOutputType> & r_work_unit_output_vector_pair : mWorkUnitOutputs )
-        {
-            const ContractorKey & r_assignee_key = r_work_unit_output_vector_pair.first;
-            const AssignmentDataVectorType<TOutputType> & r_work_unit_output_vector = r_work_unit_output_vector_pair.second;
-
-            DataUtility::DataPrinter printer;
-            std::cout<<"Assignee Key: ";
-            printer.Print(r_assignee_key);
-            std::cout<<"Assignee output vector: ";
-            printer.Print(r_work_unit_output_vector);
-        }
-
-        std::cout << std::endl;
-        std::cout << __func__ << ": Assignee output vector map: " << std::endl;
-
-        for( const AssignmentDataVectorPairType<Location, TOutputType> & r_assignee_output_vector_pair : mAssigneeOutputs )
-        {
-            const Location & r_location = r_assignee_output_vector_pair.first;
-            const AssignmentDataVectorType<TOutputType> & r_assignee_output_vector = r_assignee_output_vector_pair.second;
-
-            DataUtility::DataPrinter printer;
-            std::cout<<"Location: ";
-            printer.Print(r_location);
-            std::cout<<"Assignee output vector: ";
-            printer.Print(r_assignee_output_vector);
-        }
-
-        std::cout << std::endl;
-        std::cout << __func__ << ": Assignor output vector map: " << std::endl;
-
-        for( const AssignmentDataVectorPairType<Location, TOutputType> & r_assignor_output_vector_pair : mAssignorOutputs )
-        {
-            const Location & r_location = r_assignor_output_vector_pair.first;
-            const AssignmentDataVectorType<TOutputType> & r_assignor_output_vector = r_assignor_output_vector_pair.second;
-
-            DataUtility::DataPrinter printer;
-            std::cout<<"Location: ";
-            printer.Print(r_location);
-            std::cout<<"Assignor output vector: ";
-            printer.Print(r_assignor_output_vector);
-        }
-
-        std::cout << std::endl;
     }
 
     void ExecuteAllDistributedAssignments()
@@ -325,7 +233,7 @@ public:
         mpCommunicator->AllSendAllRecv( mAssigneeOutputs, mAssignorOutputs, mpi_tag );
     }
 
-    void GetResults( std::vector<AssignmentDataType<TOutputType>> & r_result_vector ) const
+    void GetResults( AssignmentDataVectorType<TOutputType> & r_result_vector ) const
     {
         typedef AssignmentDataType<TOutputType> Output;
         typedef AssignmentDataVectorType<TOutputType> OutputVector;
@@ -343,6 +251,110 @@ public:
         }
     }
 
+    void PrintResults() const
+    {
+        AssignmentDataVectorType<TOutputType> results;
+        GetResults( results );
+
+        std::cout << __func__ << std::endl;
+        DataUtility::DataPrinter printer;
+        printer.Print(results);
+        std::cout<<std::endl;
+    }
+
+    void PrintAllAssignments() const
+    {
+        std::cout << __func__ << ": Assignor input vector map: " << std::endl;
+
+        for( const AssignmentDataVectorPairType<Location, TInputType> & r_assignor_input_vector_pair : mAssignorInputs )
+        {
+            const Location & r_location = r_assignor_input_vector_pair.first;
+            const AssignmentDataVectorType<TInputType> & r_assignor_input_vector = r_assignor_input_vector_pair.second;
+
+            DataUtility::DataPrinter printer;
+            std::cout<<"Location: ";
+            printer.Print(r_location);
+            std::cout<<"Assignor input vector: ";
+            printer.Print(r_assignor_input_vector);
+        }
+
+        std::cout << std::endl;
+        std::cout << __func__ << ": Assignee input vector map: " << std::endl;
+
+        for( const AssignmentDataVectorPairType<Location, TInputType> & r_assignee_input_vector_pair : mAssigneeInputs )
+        {
+            const Location & r_location = r_assignee_input_vector_pair.first;
+            const AssignmentDataVectorType<TInputType> & r_assignee_input_vector = r_assignee_input_vector_pair.second;
+
+            DataUtility::DataPrinter printer;
+            std::cout<<"Location: ";
+            printer.Print(r_location);
+            std::cout<<"Assignee input vector: ";
+            printer.Print(r_assignee_input_vector);
+        }
+
+        std::cout << std::endl;
+        std::cout << __func__ << ": Work Unit input vector map: " << std::endl;
+
+        for( const AssignmentDataVectorPairType<ContractorKey, TInputType> & r_work_unit_input_vector_pair : mWorkUnitInputs )
+        {
+            const ContractorKey & r_assignee_key = r_work_unit_input_vector_pair.first;
+            const AssignmentDataVectorType<TInputType> & r_work_unit_input_vector = r_work_unit_input_vector_pair.second;
+
+            DataUtility::DataPrinter printer;
+            std::cout<<"Assignee Key: ";
+            printer.Print(r_assignee_key);
+            std::cout<<"Assignee input vector: ";
+            printer.Print(r_work_unit_input_vector);
+        }
+
+        std::cout << std::endl;
+        std::cout << __func__ << ": Work Unit output vector map: " << std::endl;
+
+        for( const AssignmentDataVectorPairType<ContractorKey, TOutputType> & r_work_unit_output_vector_pair : mWorkUnitOutputs )
+        {
+            const ContractorKey & r_assignee_key = r_work_unit_output_vector_pair.first;
+            const AssignmentDataVectorType<TOutputType> & r_work_unit_output_vector = r_work_unit_output_vector_pair.second;
+
+            DataUtility::DataPrinter printer;
+            std::cout<<"Assignee Key: ";
+            printer.Print(r_assignee_key);
+            std::cout<<"Assignee output vector: ";
+            printer.Print(r_work_unit_output_vector);
+        }
+
+        std::cout << std::endl;
+        std::cout << __func__ << ": Assignee output vector map: " << std::endl;
+
+        for( const AssignmentDataVectorPairType<Location, TOutputType> & r_assignee_output_vector_pair : mAssigneeOutputs )
+        {
+            const Location & r_location = r_assignee_output_vector_pair.first;
+            const AssignmentDataVectorType<TOutputType> & r_assignee_output_vector = r_assignee_output_vector_pair.second;
+
+            DataUtility::DataPrinter printer;
+            std::cout<<"Location: ";
+            printer.Print(r_location);
+            std::cout<<"Assignee output vector: ";
+            printer.Print(r_assignee_output_vector);
+        }
+
+        std::cout << std::endl;
+        std::cout << __func__ << ": Assignor output vector map: " << std::endl;
+
+        for( const AssignmentDataVectorPairType<Location, TOutputType> & r_assignor_output_vector_pair : mAssignorOutputs )
+        {
+            const Location & r_location = r_assignor_output_vector_pair.first;
+            const AssignmentDataVectorType<TOutputType> & r_assignor_output_vector = r_assignor_output_vector_pair.second;
+
+            DataUtility::DataPrinter printer;
+            std::cout<<"Location: ";
+            printer.Print(r_location);
+            std::cout<<"Assignor output vector: ";
+            printer.Print(r_assignor_output_vector);
+        }
+
+        std::cout << std::endl;
+    }
 private:
     TCommunicatorType * mpCommunicator;
 
