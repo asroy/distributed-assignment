@@ -16,13 +16,13 @@ class DistributedAssignmentManager
 {
 public:
     using Location = typename TCommunicatorType::Location ;
-    using ContractorKeyIssuer = TDistributedContractorKeyIssuerType<TCommunicatorType> ;
+    using ContractorKeyIssuer = TDistributedContractorKeyIssuerType<Location> ;
     using ContractorKey = typename ContractorKeyIssuer::Key ;
-    using AssignmentKeyIssuer = TDistributedAssignmentKeyIssuerType<TCommunicatorType> ;
+    using AssignmentKeyIssuer = TDistributedAssignmentKeyIssuerType<Location> ;
     using AssignmentKey = typename AssignmentKeyIssuer::Key ;
 
     template<typename TContractorType>
-    using ContractorManagerType = DistributedContractorManager<TContractorType,ContractorKeyIssuer,TCommunicatorType>;
+    using ContractorManagerType = DistributedContractorManager<TContractorType, TCommunicatorType, TDistributedContractorKeyIssuerType>;
 
     template<typename TDataType>
     using AssignmentDataType = AssignmentData<ContractorKey,AssignmentKey,TDataType>;
@@ -45,7 +45,7 @@ public:
     :   mpCommunicator {& r_communicator},
         mpAssignorManager {& r_assignor_manager},
         mpAssigneeManager {& r_assignee_manager},
-        mAssignmentKeyIssuer (r_communicator)
+        mAssignmentKeyIssuer ()
     {}
 
     ~DistributedAssignmentManager()

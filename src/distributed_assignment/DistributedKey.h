@@ -3,15 +3,13 @@
 namespace DistributedAssignment
 {
 
-template<typename TCommunicatorTYpe>
+template<typename TLocationType>
 class DistributedKeyIssuer;
 
-template<typename TCommunicatorTYpe>
+template<typename TLocationType>
 class DistributedKey
 {
 public:
-    typedef typename TCommunicatorTYpe::Location Location;
-
     DistributedKey()
     :   mBirthPlace(),
         mLocalKey{0}
@@ -22,7 +20,7 @@ public:
 
     static DistributedKey NoKey()
     {
-        DistributedKey no_key = { Location::NoWhere(), 0 };
+        DistributedKey no_key = { TLocationType::NoWhere(), 0 };
         return no_key;
     }
 
@@ -43,7 +41,7 @@ public:
     {
         bool operator() ( const DistributedKey & a, const DistributedKey & b ) const
         {
-            typename Location::LessThanComparator location_less_than;
+            typename TLocationType::LessThanComparator location_less_than;
 
             if( location_less_than(a.mBirthPlace, b.mBirthPlace) )
                 return true;
@@ -57,7 +55,7 @@ public:
     };
 
 private:
-    DistributedKey( const Location birth_place, const std::size_t local_key )
+    DistributedKey( const TLocationType birth_place, const std::size_t local_key )
     :   mBirthPlace{birth_place},
         mLocalKey{local_key}
     {}
@@ -87,10 +85,10 @@ private:
         std::cout << "},";
     }
 
-    Location mBirthPlace;
+    TLocationType mBirthPlace;
     std::size_t mLocalKey;
 
-    friend class DistributedKeyIssuer<TCommunicatorTYpe>;
+    friend class DistributedKeyIssuer<TLocationType>;
     friend class DataUtility::Serializer;
     friend class DataUtility::DataProfile;
     friend class DataUtility::DataPrinter;

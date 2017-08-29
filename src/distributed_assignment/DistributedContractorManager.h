@@ -4,14 +4,15 @@
 namespace DistributedAssignment
 {
 
-template<typename TContractorType,
-         typename TContractorKeyIssuerType,
-         typename TCommunicatorType>
+template<   typename TContractorType,
+            typename TCommunicatorType,
+            template <typename TDummyType> class TDistributedContractorKeyIssuerType >
 class DistributedContractorManager
 {
 public:
     using Location = typename TCommunicatorType::Location ;
-    using ContractorKey = typename TContractorKeyIssuerType::Key ;
+    using ContractorKeyIssuer = TDistributedContractorKeyIssuerType<Location> ;
+    using ContractorKey = typename ContractorKeyIssuer::Key ;
     using ContractorPointer = TContractorType * ;
     using ContractorPointerMapByContractorKey = std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ;
     using LocationMapByContractorKey = std::map<ContractorKey, Location, typename ContractorKey::LessThanComparator> ;
@@ -20,7 +21,7 @@ public:
 
     DistributedContractorManager( TCommunicatorType & communicator )
     :   mpCommunicator{& communicator},
-        mContractorKeyIssuer(communicator),
+        mContractorKeyIssuer(),
         mLocalContractorsPointer(),
         mGlobalContractorsLocation()
     {}
@@ -157,7 +158,7 @@ public:
 
 private:
     TCommunicatorType * const mpCommunicator;
-    TContractorKeyIssuerType mContractorKeyIssuer;
+    ContractorKeyIssuer mContractorKeyIssuer;
     ContractorPointerMapByContractorKey mLocalContractorsPointer;
     LocationMapByContractorKey mGlobalContractorsLocation;
 };

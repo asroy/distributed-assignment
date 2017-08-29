@@ -17,18 +17,18 @@ namespace ForMainOnly
 
 using Communicator = Communication::MpiCommunicator;
 using Location = typename Communicator::Location;
-using ContractorKeyIssuer = DistributedAssignment::DistributedKeyIssuer<Communicator>;
+using ContractorKeyIssuer = DistributedAssignment::DistributedKeyIssuer<Location>;
 using ContractorKey = typename ContractorKeyIssuer::Key ;
 
 template<typename TContractorType>
-using ContractorManagerType = DistributedAssignment::DistributedContractorManager<TContractorType, ContractorKeyIssuer, Communicator>;
+using ContractorManagerType = DistributedAssignment::DistributedContractorManager<TContractorType, Communicator, DistributedAssignment::DistributedKeyIssuer >;
 
 using LocationPairByContractorKey = std::pair<const ContractorKey, Location> ;
 
 template<typename TContractorType>
 using ContractorPointerPairType = std::pair<const ContractorKey, TContractorType *>;
 
-using AssignmentKeyIssuer = DistributedAssignment::DistributedKeyIssuer<Communicator> ;
+using AssignmentKeyIssuer = DistributedAssignment::DistributedKeyIssuer<Location> ;
 using AssignmentKey = typename AssignmentKeyIssuer::Key ;
 
 template<typename TDataType>
@@ -50,13 +50,13 @@ int main( int argc, char** argv )
     int mpi_rank, mpi_size;
 
     MPI_Init( &argc, &argv );
-    MPI_Comm_size( MPI_COMM_WORLD, &mpi_size );
-    MPI_Comm_rank( MPI_COMM_WORLD, &mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, & mpi_size );
+    MPI_Comm_rank( MPI_COMM_WORLD, & mpi_rank );
 
     std::cout << "rank " << mpi_rank << " PID "<< ::getpid() << std::endl;
 
     int dump;
-    // if ( mpi_rank == 0 )  std::cin >> dump;
+    if ( mpi_rank == 0 )  std::cin >> dump;
 
     Contractor someone0;
 
@@ -109,13 +109,14 @@ int main( int argc, char** argv )
 
     assignment_manager.GetResults( results );
 
-    // std::cout<<__func__<<": Results: "<<std::endl;
-    // DataUtility::DataPrinter printer;
-    // printer.Print(results);
-    // std::cout<<std::endl;
+    std::cout<<__func__<<": Results: "<<std::endl;
+    DataUtility::DataPrinter printer;
+    printer.Print(results);
+    std::cout<<std::endl;
 
     // std::cin >> dump;
 
     MPI_Finalize();
 
+    std::cout<<"done!"<<std::endl;
 }

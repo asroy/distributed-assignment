@@ -13,8 +13,8 @@ namespace Communication
 class MpiCommunicator
 {
 public:
-    typedef MpiLocation Location;
-    typedef int Peer;
+    using Location = MpiLocation;
+    using Peer = int;
 
     template<typename TDataType>
     using MapByLocationType = std::map<Location, TDataType, typename Location::LessThanComparator>;
@@ -26,18 +26,88 @@ public:
     using PairByLocationType = std::pair<const Location, TDataType>;
 
     template<typename TDataType>
-    using PairByPeer = std::pair<const Peer, TDataType>;
+    using PairByPeerType = std::pair<const Peer, TDataType>;
 
     MpiCommunicator()
-      : mMpiComm{MPI_COMM_WORLD}
-    {}
+    :   mMpiComm{MPI_COMM_WORLD},
+        mPeerToLocation(),
+        mLocationToPeer(),
+        mSendSerializers(),
+        mRecvSerializers()
+    {
+        int size;
+        MPI_Comm_size(MPI_COMM_WORLD, & size);
 
-    MpiCommunicator(const MPI_Comm mpi_comm)
-      : mMpiComm{mpi_comm}
-    {}
+        for ( int i = 0; i < size; i++ )
+        {
+            Location location(i);
+            mPeerToLocation[i] = location;
+            mLocationToPeer[location] = i;
+        }
+    }
+
+    MpiCommunicator(const MPI_Comm & mpi_comm)
+    :   mMpiComm{mpi_comm},
+        mPeerToLocation(),
+        mLocationToPeer(),
+        mSendSerializers(),
+        mRecvSerializers()
+    {
+        int size;
+        MPI_Comm_size(mMpiComm, & size);
+
+        int * world_ranks = new int[size];
+
+        int world_rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, & world_rank);
+
+        MPI_Allgather( & world_rank, 1, MPI_INT, world_ranks, 1, MPI_INT, mMpiComm );
+
+        for ( int i = 0; i < size; i++ )
+        {
+            Location location(world_ranks[i]);
+            mPeerToLocation[i] = location;
+            mLocationToPeer[location] = i;
+        }
+
+        delete[] world_ranks;
+    }
 
     ~MpiCommunicator()
     {}
+
+    Peer Myself() const
+    {
+        int rank;
+        MPI_Comm_rank(mMpiComm, & rank);
+        return rank;
+    }
+
+    Location PeerToLocation(const Peer & peer) const
+    {
+        const typename MapByPeerType<Location>::const_iterator it = mPeerToLocation.find(peer);
+
+        if( it == mPeerToLocation.end() )
+        {
+            std::cout<<__func__<<"peer not exist! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        return it->second;
+    }
+
+    Peer LocationToPeer(const Location & location) const
+    {
+        const typename MapByLocationType<Peer>::const_iterator it = mLocationToPeer.find(location);
+
+        if( it == mLocationToPeer.end() )
+        {
+            std::cout<<__func__<<"location not exist! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        return it->second;
+    }
 
     template<typename TDataType>
     void AllSendAllRecv( const MapByLocationType<TDataType> & r_send_datas, MapByLocationType<TDataType> & r_recv_datas, const int mpi_tag )
@@ -115,9 +185,6 @@ public:
         //clear r_recv_datas
         r_recv_datas.clear();
 
-        int mpi_size;
-        MPI_Comm_size(mMpiComm, &mpi_size);
-
         //root location
         Location my_location = PeerToLocation(Myself());
 
@@ -176,25 +243,33 @@ public:
 
 private:
 
-    Peer Myself() const
+    int PeerToRank(const Peer & peer) const
     {
-        int rank;
-        MPI_Comm_rank(mpComm, &rank);
+        int size;
+        MPI_Comm_size(mMpiComm, & size);
+
+        int rank = peer;
+        if( rank < 0 || rank >= size )
+        {
+            std::cout<<__func__<<"peer not exist! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         return rank;
-    }
+     }
 
-    Location PeerRankToLocation(const & rank) const
-    {}
-
-    int LocationToPeerRank(const & Location) const
-    {}
-
-    Location GetPeerLocation(const int mpi_rank) const
+    Peer RankToPeer(const int rank) const
     {
-        int mpi_size;
-        MPI_Comm_size(mMpiComm, &mpi_size);
-        Location location(mMpiComm, mpi_rank, mpi_size);
-        return location;
+        int size;
+        MPI_Comm_size(mMpiComm, & size);
+
+        if( rank < 0 || rank >= size )
+        {
+            std::cout<<__func__<<"rank not exist! exit"<<std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        return rank;
     }
 
     void AllSendAllRecvSerializer( const MapByLocationType<DataUtility::Serializer> & r_send_serializer_map, MapByLocationType<DataUtility::Serializer> & r_recv_serializer_map, int mpi_tag )
@@ -225,7 +300,7 @@ private:
             DataUtility::DataProfile send_data_profile;
             r_send_serializer.ReadBufferHeader(send_data_profile);
 
-            int i = send_to_location.MpiRank();
+            int i = PeerToRank(LocationToPeer(send_to_location));
             send_sizes[i] = send_data_profile.GetBufferContentSize();
 
             if ( send_data_profile.GetIsTrivial() )//don't want to send trivial data
@@ -240,7 +315,7 @@ private:
         {
             if(recv_sizes[i] > 0)
             {
-                Location recv_from_location = GetPeerLocation(i);
+                Location recv_from_location = PeerToLocation(RankToPeer(i));
                 DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];//this will insert new entry into map
                 r_recv_serializer.IncreaseBufferSize(recv_sizes[i]);
                 r_recv_serializer.WriteBufferHeader(DataUtility::DataProfile::Default().SetIsFromSender(false).SetIsTrivial(true));
@@ -263,7 +338,7 @@ private:
         {
             if( recv_sizes[i] > 0 )
             {
-                Location recv_from_location = GetPeerLocation(i);
+                Location recv_from_location = PeerToLocation(RankToPeer(i));
                 DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];
                 MPI_Irecv( r_recv_serializer.BufferPointer(), recv_sizes[i], MPI_CHAR, i, mpi_tag, mMpiComm, &(reqs[num_event]) );
                 num_event++;
@@ -271,7 +346,7 @@ private:
 
             if( send_sizes[i] > 0 )
             {
-                Location send_to_location = GetPeerLocation(i);
+                Location send_to_location = PeerToLocation(RankToPeer(i));
                 const DataUtility::Serializer & r_send_serializer = mSendSerializers[send_to_location];
                 MPI_Isend( r_send_serializer.BufferPointer(), send_sizes[i], MPI_CHAR, i, mpi_tag, mMpiComm, &(reqs[num_event]) );
                 num_event++;
@@ -326,7 +401,7 @@ private:
         {
             if(recv_sizes[i] > 0)
             {
-                Location recv_from_location = GetPeerLocation(i);
+                Location recv_from_location = PeerToLocation(RankToPeer(i));
                 DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];
 
                 r_recv_serializer.IncreaseBufferSize(recv_sizes[i]);
@@ -350,8 +425,8 @@ private:
         {
             if( recv_sizes[i] > 0 )
             {
-                Location location = GetPeerLocation(i);
-                DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[location];
+                Location recv_from_location = PeerToLocation(RankToPeer(i));
+                DataUtility::Serializer & r_recv_serializer = r_recv_serializer_map[recv_from_location];
 
                 MPI_Irecv( r_recv_serializer.BufferPointer(), recv_sizes[i], MPI_CHAR, i, mpi_tag, mMpiComm, &(reqs[num_event]) );
                 num_event++;

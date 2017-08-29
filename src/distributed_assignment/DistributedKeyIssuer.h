@@ -4,17 +4,14 @@
 namespace DistributedAssignment
 {
 
-template<typename TCommunicatorType>
+template<typename TLocationType>
 class DistributedKeyIssuer
 {
 public:
-    typedef DistributedKey<TCommunicatorType> Key;
+    typedef DistributedKey<TLocationType> Key;
 
-    DistributedKeyIssuer() = delete;
-
-    DistributedKeyIssuer( const TCommunicatorType & communicator )
-    :   mNumKeyIssued{0},
-        mpCommunicator{& communicator}
+    DistributedKeyIssuer()
+    :   mNumKeyIssued{0}
     {}
 
     ~DistributedKeyIssuer()
@@ -27,14 +24,13 @@ public:
 
     Key IssueNewKey()
     {
-        Key key = { mpCommunicator->Here(), mNumKeyIssued };
+        Key key = { TLocationType::Here(), mNumKeyIssued };
         mNumKeyIssued++;
         return key;
     }
 
 private:
     std::size_t mNumKeyIssued;
-    const TCommunicatorType * const mpCommunicator;
 };
 
 }
