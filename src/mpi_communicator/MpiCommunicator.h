@@ -41,14 +41,6 @@ public:
         return location;
     }
 
-    Location GetPeerLocation(const int mpi_rank) const
-    {
-        int mpi_size;
-        MPI_Comm_size(mMpiComm, &mpi_size);
-        Location location(mMpiComm, mpi_rank, mpi_size);
-        return location;
-    }
-
     template<typename TDataType>
     void AllSendAllRecv( const MapByLocationType<TDataType> & r_send_datas, MapByLocationType<TDataType> & r_recv_datas, const int mpi_tag )
     {
@@ -185,6 +177,14 @@ public:
     }
 
 private:
+
+    Location GetPeerLocation(const int mpi_rank) const
+    {
+        int mpi_size;
+        MPI_Comm_size(mMpiComm, &mpi_size);
+        Location location(mMpiComm, mpi_rank, mpi_size);
+        return location;
+    }
 
     void AllSendAllRecvSerializer( const MapByLocationType<DataUtility::Serializer> & r_send_serializer_map, MapByLocationType<DataUtility::Serializer> & r_recv_serializer_map, int mpi_tag )
     {
