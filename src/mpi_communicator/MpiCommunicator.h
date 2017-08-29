@@ -14,12 +14,19 @@ class MpiCommunicator
 {
 public:
     typedef MpiLocation Location;
+    typedef int Peer;
 
     template<typename TDataType>
     using MapByLocationType = std::map<Location, TDataType, typename Location::LessThanComparator>;
 
     template<typename TDataType>
+    using MapByPeerType = std::map<Peer, TDataType>;
+
+    template<typename TDataType>
     using PairByLocationType = std::pair<const Location, TDataType>;
+
+    template<typename TDataType>
+    using PairByPeer = std::pair<const Peer, TDataType>;
 
     MpiCommunicator()
       : mMpiComm{MPI_COMM_WORLD}
@@ -31,15 +38,6 @@ public:
 
     ~MpiCommunicator()
     {}
-
-    Location Here() const
-    {
-        int mpi_rank, mpi_size;
-        MPI_Comm_rank(mMpiComm, &mpi_rank);
-        MPI_Comm_size(mMpiComm, &mpi_size);
-        Location location(mMpiComm, mpi_rank, mpi_size);
-        return location;
-    }
 
     template<typename TDataType>
     void AllSendAllRecv( const MapByLocationType<TDataType> & r_send_datas, MapByLocationType<TDataType> & r_recv_datas, const int mpi_tag )
@@ -71,7 +69,7 @@ public:
             r_send_serializer.WriteBufferHeader(send_data_profile);
         }
 
-        //send recv buffer, recv ser
+        //send recv buffer
         AllSendAllRecvSerializer(mSendSerializers, mRecvSerializers, mpi_tag);
 
         //de-serializer r_recv_datas
@@ -121,11 +119,11 @@ public:
         MPI_Comm_size(mMpiComm, &mpi_size);
 
         //root location
-        Location root_location = GetPeerLocation(0);
+        Location my_location = PeerToLocation(Myself());
 
         //serialize r_send_data
         {
-            DataUtility::Serializer & r_send_serializer = mSendSerializers[root_location];
+            DataUtility::Serializer & r_send_serializer = mSendSerializers[my_location];
 
             //save to serializer
             r_send_serializer.WriteBufferHeader(DataUtility::DataProfile::Default());
@@ -139,7 +137,7 @@ public:
         }
 
         //send recv buffer, recv ser
-        AllGatherSerializer( mSendSerializers[root_location], mRecvSerializers, mpi_tag );
+        AllGatherSerializer( mSendSerializers[my_location], mRecvSerializers, mpi_tag );
 
         //de-serializer r_recv_datas
         for( SerializerPair & r_recv_serializer_pair: mRecvSerializers )
@@ -177,6 +175,19 @@ public:
     }
 
 private:
+
+    Peer Myself() const
+    {
+        int rank;
+        MPI_Comm_rank(mpComm, &rank);
+        return rank;
+    }
+
+    Location PeerRankToLocation(const & rank) const
+    {}
+
+    int LocationToPeerRank(const & Location) const
+    {}
 
     Location GetPeerLocation(const int mpi_rank) const
     {
@@ -363,6 +374,9 @@ private:
     }
 
     MPI_Comm mMpiComm;
+    MapByPeerType<Location> mPeerToLocation;
+    MapByLocationType<Peer> mLocationToPeer;
+
     MapByLocationType<DataUtility::Serializer> mSendSerializers;
     MapByLocationType<DataUtility::Serializer> mRecvSerializers;
 };
