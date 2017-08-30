@@ -51,7 +51,6 @@ int main( int argc, char** argv )
     using namespace ForMainOnly;
 
     using Contractor = PingPongPlayer<ContractorKey>;
-    using Output = Ball<ContractorKey>;
 
     int mpi_rank, mpi_size;
 
@@ -63,103 +62,119 @@ int main( int argc, char** argv )
 
     int dump;
     // std::cin >> dump;
-    if ( mpi_rank == 0 )  std::cin >> dump;
-
-    Contractor player_a;
-    Contractor player_b;
+    // if ( mpi_rank == 0 )  std::cin >> dump;
 
     //communicator
     Communicator communicator(MPI_COMM_WORLD);
 
+
     //player A manager
+    int player_a_num = mpi_rank+1;
+    Contractor player_a[player_a_num];
+
     ContractorManagerType<Contractor> player_a_manager(communicator);
 
     player_a_manager.ClearContractorsRegistry();
-    player_a_manager.RegisterLocalContractor(player_a);
+    for( int i = 0; i < player_a_num; i++ )
+    {
+        player_a_manager.RegisterLocalContractor(player_a[i], "PlayerA");
+    }
     player_a_manager.GenerateGlobalContractorsRegistry();
     // player_a_manager.PrintAllContractors();
 
+
     //player B manager
+    int player_b_num = mpi_size-mpi_rank;
+    Contractor player_b[player_b_num];
+
     ContractorManagerType<Contractor> player_b_manager(communicator);
 
     player_b_manager.ClearContractorsRegistry();
-    player_b_manager.RegisterLocalContractor(player_b);
+    for( int i = 0; i < player_b_num; i++ )
+    {
+        player_b_manager.RegisterLocalContractor(player_b[i], "PlayerB");
+    }
     player_b_manager.GenerateGlobalContractorsRegistry();
     // player_b_manager.PrintAllContractors();
 
-    // rival list
-    const ContractorKeySet & r_a_players_key = player_a_manager.GlobalContractorsKey();
-    const ContractorKeySet & r_b_players_key = player_b_manager.GlobalContractorsKey();
+    // assignment manager
+    AssignmentManager<Contractor,Contractor,int,int>  assignment_a_manager(communicator, player_a_manager, player_b_manager);
+    AssignmentManager<Contractor,Contractor,int,int>  assignment_b_manager(communicator, player_b_manager, player_a_manager);
 
-    //let players know their rivals
-    for( const ContractorPointerPairType<Contractor> & r_local_player_a_pointer_pair : player_a_manager.LocalContractorsPointer() )
+
+    // first pong, assigned by player A, to player B
     {
-        Contractor * p_local_player_a_pointer = r_local_player_a_pointer_pair.second;
-        p_local_player_a_pointer->SetRivals(r_b_players_key);
+        ContractorKey player_a_key = *(player_a_manager.GlobalContractorsKey().begin());
+        ContractorKey player_b_key = *(player_b_manager.GlobalContractorsKey().begin());
+
+        if ( player_a_manager.LocalContractorsKey().find(player_a_key) != player_a_manager.LocalContractorsKey().end() )
+        {
+            assignment_a_manager.AddAssignment(player_a_key, player_b_key, 0 );
+        }
+
+        assignment_a_manager.ExecuteAllDistributedAssignments();
+
     }
 
-    for( const ContractorPointerPairType<Contractor> & r_local_player_b_pointer_pair : player_b_manager.LocalContractorsPointer() )
-    {
-        Contractor * p_local_player_b_pointer = r_local_player_b_pointer_pair.second;
-        p_local_player_b_pointer->SetRivals(r_a_players_key);
-    }
-
-
-    // initialize ball
-    Output ball = { *(r_a_players_key.begin()), *(r_b_players_key.begin()) };
-
-    //assignment
+    // start ping/pong loop
     for( int i_round = 0; i_round < 100; i_round++ )
     {
-        // if( mpi_rank == 0 )
-            std::cout <<"round "<<i_round<<std::endl;
+        std::cout << "round " << i_round << std::endl;
 
-        AssignmentDataVectorType<Output> balls;
 
-        //assignment: ping
-        AssignmentManager<Contractor,Contractor,int,Output>  assignment_a_manager(communicator, player_a_manager, player_b_manager);
+        AssignmentDataVectorType<int> assignment_a_result_vector;
+        assignment_a_manager.GetResultsAtAssignee(assignment_a_result_vector);
 
-        Contractor * p_player_a = player_a_manager.FindLocalContractorPointer( ball.mFrom );
+        //ping: assignment B
+        // for each results of assignment A, assign an assignment B
+        assignment_b_manager.ClearAllAssignment();
 
-        if( p_player_a != nullptr )
+        for( AssignmentDataType<int> & assignment_a_result : assignment_a_result_vector )
         {
-            std::cout <<"add a assignment"<<std::endl;
-            assignment_a_manager.AddAssignment(p_player_a->GetKey(), ball.mTo, 1 );
+            ContractorKey last_player_a_key = assignment_a_result.GetAssignorKey();
+            ContractorKey player_b_key = assignment_a_result.GetAssigneeKey();
+
+            ContractorKeySet::iterator it_last_player_a_key = player_a_manager.GlobalContractorsKey().find(last_player_a_key);
+
+            ContractorKeySet::iterator it_next_player_a_key = std::next(it_last_player_a_key);
+            if( it_next_player_a_key == player_a_manager.GlobalContractorsKey().end() )
+                it_next_player_a_key = player_a_manager.GlobalContractorsKey().begin();
+
+            ContractorKey next_player_a_key = *it_next_player_a_key;
+
+            assignment_b_manager.AddAssignment(player_b_key, next_player_a_key, 0 );
         }
 
-        //work
-        assignment_a_manager.ExecuteAllDistributedAssignments();
-        // assignment_a_manager.PrintAllAssignments();
-        // assignment_a_manager.PrintResults();
-        assignment_a_manager.GetResults( balls );
-
-        //catch ball
-        if( balls.size() > 0 ) ball = balls[0].GetData();
-
-
-        //assignment: pong
-        AssignmentManager<Contractor,Contractor,int,Output>  assignment_b_manager(communicator, player_b_manager, player_a_manager);
-
-        Contractor * p_player_b = player_b_manager.FindLocalContractorPointer( ball.mFrom );
-
-        if( p_player_b != nullptr )
-        {
-            std::cout <<"add b assignment"<<std::endl;
-            assignment_b_manager.AddAssignment(p_player_b->GetKey(), ball.mTo, 1 );
-        }
-
-        //work
         assignment_b_manager.ExecuteAllDistributedAssignments();
-        // assignment_b_manager.PrintAllAssignments();
-        // assignment_b_manager.PrintResults();
-        assignment_b_manager.GetResults( balls );
 
-        //catch ball
-        if( balls.size() > 0 ) ball = balls[0].GetData();
+        AssignmentDataVectorType<int> assignment_b_result_vector;
+        assignment_b_manager.GetResultsAtAssignee(assignment_b_result_vector);
+
+        //ping: assignment A
+        // for each results of assignment B, assign an assignment A
+        assignment_a_manager.ClearAllAssignment();
+
+        for( AssignmentDataType<int> & assignment_b_result : assignment_b_result_vector )
+        {
+            ContractorKey last_player_b_key = assignment_b_result.GetAssignorKey();
+            ContractorKey player_a_key = assignment_b_result.GetAssigneeKey();
+
+            ContractorKeySet::iterator it_last_player_b_key = player_b_manager.GlobalContractorsKey().find(last_player_b_key);
+
+            ContractorKeySet::iterator it_next_player_b_key = std::next(it_last_player_b_key);
+            if( it_next_player_b_key == player_b_manager.GlobalContractorsKey().end() )
+                it_next_player_b_key = player_b_manager.GlobalContractorsKey().begin();
+
+            ContractorKey next_player_b_key = *it_next_player_b_key;
+
+            assignment_a_manager.AddAssignment(player_a_key, next_player_b_key, 0 );
+        }
+
+        assignment_a_manager.ExecuteAllDistributedAssignments();
     }
 
     MPI_Finalize();
 
     std::cout<<"done!"<<std::endl;
-    // std::cin >> dump;
+    std::cin >> dump;
 }

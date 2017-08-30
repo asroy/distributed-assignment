@@ -44,7 +44,7 @@ public:
         mGlobalContractorsLocation.clear();
     }
 
-    void RegisterLocalContractor( TContractorType & r_contractor )
+    void RegisterLocalContractor( TContractorType & r_contractor, const std::string & r_name )
     {
         const ContractorKey old_key = r_contractor.GetKey();
 
@@ -65,6 +65,7 @@ public:
         {
             ContractorKey new_key = mContractorKeyIssuer.IssueNewKey();
             r_contractor.SetKey(new_key);
+            r_contractor.SetName(r_name);
             mLocalContractorsPointer[new_key] = & r_contractor;
             mLocalContractorsKey.insert(new_key);
         }
