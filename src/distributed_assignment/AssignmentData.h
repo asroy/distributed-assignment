@@ -16,6 +16,21 @@ public:
         mData()
     {}
 
+    ~AssignmentData()
+    {}
+
+    TContractorKeyType GetAssignorKey() const
+    { return mAssignorKey; }
+
+    TContractorKeyType GetAssigneeKey() const
+    { return mAssigneeKey; }
+
+    TAssignmentKeyType GetAssignmentKey() const
+    { return mAssignmentKey; }
+
+    TDataType GetData() const
+    { return mData; }
+
 private:
     AssignmentData
     (   const TContractorKeyType & r_assignor_key,

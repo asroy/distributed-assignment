@@ -28,6 +28,11 @@ public:
         return MpiLocation{-1};
     }
 
+    MpiLocation Next( const int n ) const
+    {
+        return MpiLocation{mWorldRank + n};
+    }
+
     bool operator == (const MpiLocation & other) const
     {
         if( mWorldRank != other.mWorldRank )

@@ -32,6 +32,8 @@ public:
     :   mMpiComm{MPI_COMM_WORLD},
         mPeerToLocation(),
         mLocationToPeer(),
+        mPeers(),
+        mLocations(),
         mSendSerializers(),
         mRecvSerializers()
     {
@@ -41,8 +43,11 @@ public:
         for ( int i = 0; i < size; i++ )
         {
             Location location(i);
+            Peer peer = i;
             mPeerToLocation[i] = location;
-            mLocationToPeer[location] = i;
+            mLocationToPeer[location] = peer;
+            mPeers.push_back(peer);
+            mLocations.push_back(location);
         }
     }
 
@@ -50,6 +55,8 @@ public:
     :   mMpiComm{mpi_comm},
         mPeerToLocation(),
         mLocationToPeer(),
+        mPeers(),
+        mLocations(),
         mSendSerializers(),
         mRecvSerializers()
     {
@@ -66,8 +73,11 @@ public:
         for ( int i = 0; i < size; i++ )
         {
             Location location(world_ranks[i]);
+            Peer peer = i;
             mPeerToLocation[i] = location;
-            mLocationToPeer[location] = i;
+            mLocationToPeer[location] = peer;
+            mPeers.push_back(peer);
+            mLocations.push_back(location);
         }
 
         delete[] world_ranks;
@@ -82,6 +92,12 @@ public:
         MPI_Comm_rank(mMpiComm, & rank);
         return rank;
     }
+
+    const std::vector<Peer> & Peers() const
+    { return mPeers; }
+
+    const std::vector<Location> & Locations() const
+    { return mLocations; }
 
     Location PeerToLocation(const Peer & peer) const
     {
@@ -451,6 +467,9 @@ private:
     MPI_Comm mMpiComm;
     MapByPeerType<Location> mPeerToLocation;
     MapByLocationType<Peer> mLocationToPeer;
+
+    std::vector<Peer> mPeers;
+    std::vector<Location> mLocations;
 
     MapByLocationType<DataUtility::Serializer> mSendSerializers;
     MapByLocationType<DataUtility::Serializer> mRecvSerializers;

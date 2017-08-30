@@ -36,13 +36,12 @@ int main( int argc, char** argv )
   std::map<Location, DataVector, Location::LessThanComparator> recv_data_vector_map;
 
   // data to send
-  for( int i = 0; i < mpi_size; i++ )
+  for ( const Location & send_to_location : communicator.Locations() )
   {
-    Location send_to_location = communicator.GetPeerLocation(i);
-    DataVector & r_send_data_vector = send_data_vector_map[send_to_location];
+      DataVector & r_send_data_vector = send_data_vector_map[send_to_location];
 
-    for( int j = 0; j < mpi_rank+1; j++ )
-      r_send_data_vector.push_back(a0);
+      for( int j = 0; j < mpi_rank+1; j++ )
+          r_send_data_vector.push_back(a0);
   }
 
   //send recv
@@ -68,7 +67,7 @@ int main( int argc, char** argv )
       std::cout<<std::endl;
   }
 
-  std::cin >> dump;
-
   MPI_Finalize();
+
+  // std::cin >> dump;
 }
