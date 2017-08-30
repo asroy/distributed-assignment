@@ -1,5 +1,7 @@
+#pragma once
 #include<string>
 #include<set>
+#include<math.h>
 #include<mpi.h>
 #include<MpiLocation.h>
 
@@ -38,6 +40,12 @@ public:
         std::cout<<"ball is at player ";
         printer.Print(*this);
         std::cout<<std::endl;
+
+        for(int i = 0; i < 1000; i++)
+        {
+            double x = 10;
+            x = sqrt(x*10);
+        }
     }
 
 private:

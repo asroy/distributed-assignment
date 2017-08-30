@@ -62,13 +62,14 @@ int main( int argc, char** argv )
 
     int dump;
     // std::cin >> dump;
-    // if ( mpi_rank == 0 )  std::cin >> dump;
+    if ( mpi_rank == 0 )  std::cin >> dump;
 
     //communicator
     Communicator communicator(MPI_COMM_WORLD);
 
     //player A manager
-    int player_a_num = mpi_rank+1;
+    int player_a_num = 10;
+    // int player_a_num = mpi_rank+1;
     Contractor player_a[player_a_num];
 
     ContractorManagerType<Contractor> player_a_manager(communicator);
@@ -82,7 +83,8 @@ int main( int argc, char** argv )
     // player_a_manager.PrintAllContractors();
 
     //player B manager
-    int player_b_num = mpi_size-mpi_rank;
+    int player_b_num = 10;
+    // int player_b_num = mpi_size-mpi_rank;
     Contractor player_b[player_b_num];
 
     ContractorManagerType<Contractor> player_b_manager(communicator);
@@ -101,12 +103,22 @@ int main( int argc, char** argv )
 
     // first pong, assigned by player A, to player B
     {
-        ContractorKey player_a_key = *(player_a_manager.GlobalContractorsKey().begin());
-        ContractorKey player_b_key = *(player_b_manager.GlobalContractorsKey().begin());
+        auto it_b = player_b_manager.GlobalContractorsKey().begin();
 
-        if ( player_a_manager.LocalContractorsKey().find(player_a_key) != player_a_manager.LocalContractorsKey().end() )
+        for( auto it_a = player_a_manager.GlobalContractorsKey().begin();
+             it_a != player_a_manager.GlobalContractorsKey().end();
+             it_a = std::next(it_a) )
         {
-            assignment_a_manager.AddAssignment(player_a_key, player_b_key, 0 );
+            auto player_a_key = *it_a;
+            auto player_b_key = *it_b;
+
+            if( player_a_manager.LocalContractorsKey().find(player_a_key) != player_a_manager.LocalContractorsKey().end() )
+                assignment_a_manager.AddAssignment(player_a_key, player_b_key,0);
+
+            it_b = std::next(it_b);
+
+            if( it_b == player_b_manager.GlobalContractorsKey().end() )
+                it_b = player_b_manager.GlobalContractorsKey().begin();
         }
 
         assignment_a_manager.ExecuteAllDistributedAssignments();
@@ -131,9 +143,13 @@ int main( int argc, char** argv )
 
             ContractorKeySet::iterator it_last_player_a_key = player_a_manager.GlobalContractorsKey().find(last_player_a_key);
 
-            ContractorKeySet::iterator it_next_player_a_key = std::next(it_last_player_a_key);
-            if( it_next_player_a_key == player_a_manager.GlobalContractorsKey().end() )
-                it_next_player_a_key = player_a_manager.GlobalContractorsKey().begin();
+            ContractorKeySet::iterator it_next_player_a_key;
+            for( int i = 0; i < 10; i++ )
+            {
+                it_next_player_a_key = std::next(it_last_player_a_key);
+                if( it_next_player_a_key == player_a_manager.GlobalContractorsKey().end() )
+                    it_next_player_a_key = player_a_manager.GlobalContractorsKey().begin();
+            }
 
             ContractorKey next_player_a_key = *it_next_player_a_key;
 
@@ -156,9 +172,13 @@ int main( int argc, char** argv )
 
             ContractorKeySet::iterator it_last_player_b_key = player_b_manager.GlobalContractorsKey().find(last_player_b_key);
 
-            ContractorKeySet::iterator it_next_player_b_key = std::next(it_last_player_b_key);
-            if( it_next_player_b_key == player_b_manager.GlobalContractorsKey().end() )
-                it_next_player_b_key = player_b_manager.GlobalContractorsKey().begin();
+            ContractorKeySet::iterator it_next_player_b_key;
+            for( int i = 0; i < 10; i++ )
+            {
+                it_next_player_b_key = std::next(it_last_player_b_key);
+                if( it_next_player_b_key == player_b_manager.GlobalContractorsKey().end() )
+                    it_next_player_b_key = player_b_manager.GlobalContractorsKey().begin();
+            }
 
             ContractorKey next_player_b_key = *it_next_player_b_key;
 
