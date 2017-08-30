@@ -92,20 +92,10 @@ public:
 
     void ExecuteAllDistributedAssignments()
     {
-        using InputVectorPairByContractorKey = AssignmentDataVectorPairType<ContractorKey, TInputType> ;
-
         SendAssignorInputsToAssigneeInputs(0);
-
         GenerateWorkUnitsInputs();
-
-        for( const InputVectorPairByContractorKey & r_input_vector_pair : mWorkUnitInputs )
-        {
-            const ContractorKey assignee_key = r_input_vector_pair.first;
-            ExecuteLocalWorkUnit(assignee_key);
-        }
-
+        ExecuteAllLocalWorkUnits();
         GenerateAssigneeOuputs();
-
         SendAssigneeOutputsToAssignorOutputs(1);
     }
 
@@ -130,6 +120,17 @@ public:
                 ContractorKey assignee_key = r_assignee_input.mAssigneeKey;
                 mWorkUnitInputs[assignee_key].push_back(r_assignee_input);
             }
+        }
+    }
+
+    void ExecuteAllLocalWorkUnits()
+    {
+        using InputVectorPairByContractorKey = AssignmentDataVectorPairType<ContractorKey, TInputType> ;
+
+        for( const InputVectorPairByContractorKey & r_input_vector_pair : mWorkUnitInputs )
+        {
+            const ContractorKey assignee_key = r_input_vector_pair.first;
+            ExecuteLocalWorkUnit(assignee_key);
         }
     }
 
@@ -180,25 +181,6 @@ public:
                 r_output_vector[i_output].mAssigneeKey   = r_input_vector[i_input].mAssigneeKey;
             }
         }
-
-        //print
-        // {
-        //     std::cout<<__func__<<std::endl;
-
-        //     DataUtility::DataPrinter printer;
-
-        //     std::cout<<": Assignee key: ";
-        //     printer.Print(assignee_key);
-        //     std::cout<<std::endl;
-
-        //     std::cout<<": WorkUnit input vector: ";
-        //     printer.Print(r_input_vector);
-        //     std::cout<<std::endl;
-
-        //     std::cout<<": WorkUnit output vector: ";
-        //     printer.Print(r_output_vector);
-        //     std::cout<<std::endl;
-        // }
     }
 
     void GenerateAssigneeOuputs()//convert work unit output data to assignee output data
@@ -233,33 +215,36 @@ public:
         mpCommunicator->AllSendAllRecv( mAssigneeOutputs, mAssignorOutputs, mpi_tag );
     }
 
-    void GetResults( AssignmentDataVectorType<TOutputType> & r_result_vector ) const
+    void GetResultsAtAssignor( AssignmentDataVectorType<TOutputType> & r_result_vector ) const
     {
-        typedef AssignmentDataType<TOutputType> Output;
-        typedef AssignmentDataVectorType<TOutputType> OutputVector;
-        typedef AssignmentDataVectorPairType<Location, TOutputType> OutputVectorPairByLocation;
+        using Output = AssignmentDataType<TOutputType> ;
+        using OutputVector = AssignmentDataVectorType<TOutputType> ;
+        using OutputVectorPairByLocation = AssignmentDataVectorPairType<Location, TOutputType> ;
 
         r_result_vector.clear();
 
-        for( const OutputVectorPairByLocation & r_assignor_output_vector_pair : mAssignorOutputs )
+        for( const OutputVectorPairByLocation & r_output_vector_pair : mAssignorOutputs )
         {
-            const OutputVector & r_assignor_output_vector = r_assignor_output_vector_pair.second;
-            for( const Output & r_output : r_assignor_output_vector )
-            {
+            const OutputVector & r_output_vector = r_output_vector_pair.second;
+            for( const Output & r_output : r_output_vector )
                 r_result_vector.push_back(r_output);
-            }
         }
     }
 
-    void PrintResults() const
+    void GetResultsAtAssignee( AssignmentDataVectorType<TOutputType> & r_result_vector ) const
     {
-        AssignmentDataVectorType<TOutputType> results;
-        GetResults( results );
+        using Output = AssignmentDataType<TOutputType> ;
+        using OutputVector = AssignmentDataVectorType<TOutputType> ;
+        using OutputVectorPairByContractorKey = AssignmentDataVectorPairType<ContractorKey, TOutputType> ;
 
-        std::cout << __func__ << std::endl;
-        DataUtility::DataPrinter printer;
-        printer.Print(results);
-        std::cout<<std::endl;
+        r_result_vector.clear();
+
+        for( const OutputVectorPairByContractorKey & r_output_vector_pair : mWorkUnitOutputs )
+        {
+            const OutputVector & r_output_vector = r_output_vector_pair.second;
+            for( const Output & r_output : r_output_vector )
+                r_result_vector.push_back(r_output);
+        }
     }
 
     void PrintAllAssignments() const
