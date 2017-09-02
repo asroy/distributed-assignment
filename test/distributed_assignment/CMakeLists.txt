@@ -1,0 +1,1 @@
+add_executable(test_distributed_assignment_even_loading test_distributed_assignment_even_loading.cpp)
