@@ -33,7 +33,7 @@ private:
         r_printer.Print(i);
         r_printer.Print(z);
         r_printer.Print(c);
-        std::cout << "}";
+        std::cout << "},";
     }
 
     friend class DataUtility::Serializer;
