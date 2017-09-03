@@ -22,13 +22,13 @@ public:
     void SetName( const std::string & r_name )
     { mName = r_name; }
 
-    std::string GetName() const
+    std::string Name() const
     { return mName; }
 
     void SetKey(const TContractorKeyType contrator_key)
     { mKey = contrator_key; }
 
-    TContractorKeyType GetKey() const
+    TContractorKeyType Key() const
     { return mKey; }
 
     void Execute( const int & r_in, int & r_out)

@@ -6,6 +6,7 @@ set(DistributedAssignment_User_Header
   mpi_communicator/MpiCommunicator.h;
   mpi_communicator/MpiLocation.h;
   distributed_assignment/AssignmentData.h;
+  distributed_assignment/DummyContractor.h;
   distributed_assignment/DistributedAssignmentManager.h;
   distributed_assignment/DistributedContractorManager.h;
   distributed_assignment/DistributedKey.h;

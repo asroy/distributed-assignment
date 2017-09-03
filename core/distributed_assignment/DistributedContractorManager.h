@@ -46,7 +46,7 @@ public:
 
     void RegisterLocalContractor( TContractorType & r_contractor, const std::string & r_name )
     {
-        const ContractorKey old_key = r_contractor.GetKey();
+        const ContractorKey old_key = r_contractor.Key();
 
         if( old_key != ContractorKey::NoKey() )
         {
