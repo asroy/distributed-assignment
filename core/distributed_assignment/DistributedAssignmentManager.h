@@ -43,14 +43,15 @@ public:
     DistributedAssignmentManager
     (   TCommunicatorType & r_communicator,
         ContractorManagerType<TAssignorType> & r_assignor_manager,
-        ContractorManagerType<TAssigneeType> & r_assignee_manager )
-    :   mpCommunicator {& r_communicator},
-        mpAssignorManager {& r_assignor_manager},
-        mpAssigneeManager {& r_assignee_manager},
-        mAssignmentKeyIssuer ()
+        ContractorManagerType<TAssigneeType> & r_assignee_manager
+    )
+        :   mpCommunicator {& r_communicator},
+            mpAssignorManager {& r_assignor_manager},
+            mpAssigneeManager {& r_assignee_manager},
+            mAssignmentKeyIssuer ()
     {}
 
-    ~DistributedAssignmentManager()
+    virtual ~DistributedAssignmentManager()
     {
         mpCommunicator = nullptr;
         mpAssignorManager = nullptr;

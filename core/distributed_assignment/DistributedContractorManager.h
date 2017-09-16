@@ -33,7 +33,7 @@ public:
         mGlobalContractorsLocation()
     {}
 
-    ~DistributedContractorManager()
+    virtual ~DistributedContractorManager()
     {}
 
     void ClearContractorsRegistry()
@@ -44,7 +44,13 @@ public:
         mGlobalContractorsLocation.clear();
     }
 
-    void RegisterLocalContractor( TContractorType & r_contractor, const std::string & r_name )
+    void RegisterLocalContractors( const std::vector<TContractorType *> & contractor_pointers, const std::string & r_name )
+    {
+        for( const TContractorType * const p_contractor : contractor_pointers )
+            RegisterLocalContractor(*p_contractor, r_name);
+    }
+
+    void RegisterLocalContractor( const TContractorType & r_contractor, const std::string & r_name )
     {
         const ContractorKey old_key = r_contractor.Key();
 
@@ -56,7 +62,7 @@ public:
 
             printer.Print(old_key);
 
-            std::cout <<"alreay has key! Do nothing" << std::endl;
+            std::cout <<"already has key! Do nothing" << std::endl;
         }
 
         const typename ContractorPointerMapByContractorKey::const_iterator it = mLocalContractorsPointer.find(old_key);
