@@ -58,7 +58,7 @@ public:
         mpAssigneeManager = nullptr;
     }
 
-    void ClearAllAssignment()
+    void ClearAllAssignments()
     {
         mAssignmentKeyIssuer.Clear();
 
