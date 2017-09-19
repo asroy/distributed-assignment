@@ -134,7 +134,7 @@ int main( int argc, char** argv )
 
         //ping: assignment B
         // for each results of assignment A, assign an assignment B
-        assignment_b_manager.ClearAllAssignment();
+        assignment_b_manager.ClearAllAssignments();
 
         for( AssignmentDataType<int> & assignment_a_result : assignment_a_result_vector )
         {
@@ -163,7 +163,7 @@ int main( int argc, char** argv )
 
         //ping: assignment A
         // for each results of assignment B, assign an assignment A
-        assignment_a_manager.ClearAllAssignment();
+        assignment_a_manager.ClearAllAssignments();
 
         for( AssignmentDataType<int> & assignment_b_result : assignment_b_result_vector )
         {

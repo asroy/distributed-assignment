@@ -50,7 +50,7 @@ public:
             RegisterLocalContractor(*p_contractor, r_name);
     }
 
-    void RegisterLocalContractor( const TContractorType & r_contractor, const std::string & r_name )
+    void RegisterLocalContractor( TContractorType & r_contractor, const std::string & r_name )
     {
         const ContractorKey old_key = r_contractor.Key();
 
