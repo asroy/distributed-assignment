@@ -20,6 +20,7 @@ public:
     using ContractorKeySet = std::set<ContractorKey, typename ContractorKey::LessThanComparator> ;
     using ContractorPointer = TContractorType * ;
     using ContractorPointerMapByContractorKey = std::map<ContractorKey, ContractorPointer, typename ContractorKey::LessThanComparator> ;
+    using ContractorPointerPairByContractorKey = std::pair<const ContractorKey, ContractorPointer>;
     using LocationMapByContractorKey = std::map<ContractorKey, Location, typename ContractorKey::LessThanComparator> ;
 
     DistributedContractorManager() = delete;
